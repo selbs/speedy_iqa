@@ -1,18 +1,19 @@
-Speedy QC for Desktop <img src="https://github.com/selbs/speedy_qc/blob/master/speedy_qc/assets/1x/grey.png" alt="App Logo" width="200" style="float: right;">
+Speedy IQA for Desktop <img src="https://github.com/selbs/speedy_iqa/blob/master/speedy_iqa/assets/logo.png" alt="App Logo" width="200" style="float: right;">
 =====================
 
-Speedy QC is a DICOM viewer and customisable labeller for DICOM images. The program may be
-used to quickly check the quality of the images and/or to label them with the required ground truth for
-training a deep learning model. Bounding boxes may be added to demarcate the findings.
+Speedy IQA is an image viewer and customisable labeller for image quality assessment (IQA). The program may be
+used to quickly check the quality of the images against a reference image and/or to label them with the required ground 
+truth for training an IQA model.
 
 The program may be run from the command line or as an executable, which can be downloaded or 
 created from the source code.
 
 Primarily for use on Mac OS X, but should work on Linux and Windows.
 
-![Screenshot](https://github.com/selbs/speedy_qc/blob/master/speedy_qc/assets/screenshot.png)
+![Screenshot](https://github.com/selbs/speedy_iqa/blob/master/speedy_iqa/assets/screenshot.png)
 
-> **Warning:** Please note that this application is still in development and there may be unresolved bugs and issues. Use at your own risk!
+> **Warning:** Please note that this application is still in development and there may be unresolved bugs and issues. 
+> Use at your own risk!
 
 ## Table of Contents
 - [Installation](#installation)
@@ -35,7 +36,7 @@ Installation
 Install the package using pip:
 
 ```bash
-pip install git+https://github.com/selbs/speedy_qc
+pip install git+https://github.com/selbs/speedy_iqa
 ```
 
 It is recommended to install the package in a Python 3.10 virtual environment as it was this
@@ -44,8 +45,8 @@ version of python used in development. However, other versions of Python 3 shoul
 You can also clone the package from GitHub and install it manually:
 
 ```bash
-git clone https://github.com/selbs/speedy_qc.git
-cd speedy_qc
+git clone https://github.com/selbs/speedy_iqa.git
+cd speedy_iqa
 pip install .
 ```
 
@@ -55,36 +56,16 @@ Usage
 Run the following command in the command line:
 
 ```bash
-speedy_qc
+speedy_iqa
 ```
 
 Alternatively, the app may be run from an executable (see below).
 
 ### Inputs and Outputs
 
-#### Checkboxes
-
-Checkboxes are stored as integers:  
-
-| Checkbox Value  |   Meaning   |
-|:---------------:|:-----------:|
-|        0        | False / No  |
-|        1        |  Uncertain  |
-|        2        | True / Yes  |
-
-#### Bounding Boxes
-
-- Added to the image by clicking and dragging the mouse.
-- Multiple boxes may be added to each image and for each finding.
-- The box is labelled with the name of the last checked checkbox.
-- Moved by clicking and dragging the box. 
-- Deleted by right-clicking on the box and selecting `Remove` from the menu.
-
 #### Radiobuttons
 
-Radiobuttons are stored as integers with the meaning of the integer corresponding to the order of the radiobuttons
-inputted in the configuration wizard. For example, if the radiobuttons are `['Normal', 'Abnormal']`, then the values
-will be `0` for `Normal` and `1` for `Abnormal`.
+Radiobutton outputs are stored as integers in the output json file.
 
 ### Progress
 
@@ -103,46 +84,16 @@ Your progress through the folder of images is shown in the progress bar at the b
 |                 <kbd>L</kbd>                  | Rotate image left  |
 |                 <kbd>S</kbd>                  |    Save to CSV     |
 | <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd> |        Quit        |
-|            <kbd>Cmd</kbd> + Scroll            |    Window Width    |
-|           <kbd>Shift</kbd> + Scroll           |   Window Center    |
+|            <kbd>Cmd</kbd> + Scroll            |      Contrast      |
+|           <kbd>Shift</kbd> + Scroll           |     Brightness     |
 
 Note: <kbd>Cmd</kbd> + Scroll and <kbd>Shift</kbd> + Scroll are only currently available on Mac OS X.
-
-Customisation
--------------
-
-The program can be customised to suit the user's needs. The following options are available:
-- Select which checkboxes are required
-- Select whether checkboxes can be set to 'uncertain' (i.e. 1 - see above)
-- Select whether radiobuttons are required
-- Change the maximum number of backups
-- Backup frequency in minutes
-- Change the backup directory
-- Change the log directory
-
-### Configuration Wizard
-
-The configuration wizard can be run from the opening dialog of the app.
-
-If installed by pip, the configuration wizard can also be run from the command line using the following:
-
-```bash
-speedy_config
-```
-
-### YAML File
-
-These configuration settings are stored in the `config.yml` file in the `speedy_qc` directory. This
-can be edited directly if desired. If you're using an executable, the `config.yml` file can be edited in 
-`Speedy QC.app/Contents/Resources/config.yml`, which accessible through the terminal or if using Mac OS X, by
-right-clicking on the executable and selecting `Show Package Contents`.
-
 
 Backup Files
 ------------
 
 Work is automatically backed up every 5 minutes, but this interval can be customised. By default, the backups are 
-stored in the user's home directory (`~`) in the folder `~/speedy_qc/backups` and up to the latest ten backups are 
+stored in the user's home directory (`~`) in the folder `~/speedy_iqa/backups` and up to the latest ten backups are 
 stored. The number of backups, the backup interval and the backup directory can be customised in the configuration 
 wizard or the `config.yml` file.
 
@@ -151,7 +102,7 @@ Executable Application
 ----------------------
 
 The executable application may be downloaded from:
-- Mac OS X:  https://github.com/selbs/speedy_qc/releases/tag/v0.1.2
+- Mac OS X:  https://github.com/selbs/speedy_iqa/releases/
   - *Universal binary for both 86x64 (Intel) and arm64 (Apple Silicon) Macs*. 
 - Windows: [add link](https://www.example_link.com)
 
@@ -182,7 +133,7 @@ The finished executable will be in the `dist` folder, which can be moved to the 
 If experiencing issues with `py2app` on Mac OS X, you can run the program the terminal to see more information:
 
 ```bash
-'dist_86x64/Speedy QC.app/Contents/MacOS/Speedy QC'
+'dist_86x64/Speedy IQA.app/Contents/MacOS/Speedy IQA'
 ```
 
 or alternatively compile the program in alias mode:
@@ -201,12 +152,12 @@ A universal binary can be created by combining the two executables created by `p
 To create a universal binary for the 86x64 and arm64 executables, use the following commands:
 
 ```bash
-mkdir -p "dist/universal/Speedy QC.app/"
-cp -R "dist/arm64/Speedy QC.app/" "dist/universal/Speedy QC.app/"
-rm -rf "dist/universal/Speedy QC.app/Contents/MacOS/Speedy QC"
-rm -rf "dist/universal/Speedy QC.app/Contents/MacOS/Python"
-lipo -create -output "dist/universal/Speedy QC.app/Contents/MacOS/Speedy QC" "dist/arm64/Speedy QC.app/Contents/MacOS/Speedy QC" "dist/86x64/Speedy QC.app/Contents/MacOS/Speedy QC"
-lipo -create -output "dist/universal/Speedy QC.app/Contents/MacOS/Python" "dist/arm64/Speedy QC.app/Contents/MacOS/Python" "dist/86x64/Speedy QC.app/Contents/MacOS/Python"
+mkdir -p "dist/universal/Speedy IQA.app/"
+cp -R "dist/arm64/Speedy IQA.app/" "dist/universal/Speedy IQA.app/"
+rm -rf "dist/universal/Speedy IQA.app/Contents/MacOS/Speedy IQA"
+rm -rf "dist/universal/Speedy IQA.app/Contents/MacOS/Python"
+lipo -create -output "dist/universal/Speedy IQA.app/Contents/MacOS/Speedy IQA" "dist/arm64/Speedy IQA.app/Contents/MacOS/Speedy IQA" "dist/86x64/Speedy IQA.app/Contents/MacOS/Speedy IQA"
+lipo -create -output "dist/universal/Speedy IQA.app/Contents/MacOS/Python" "dist/arm64/Speedy IQA.app/Contents/MacOS/Python" "dist/86x64/Speedy IQA.app/Contents/MacOS/Python"
 ```
 
 #### libffi

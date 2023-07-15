@@ -22,7 +22,7 @@ from qt_material import apply_stylesheet, get_theme
 import sys
 from math import ceil
 
-from speedy_qc.utils import open_yml_file, setup_logging, ConnectionManager
+from speedy_iqa.utils import open_yml_file, setup_logging, ConnectionManager
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -31,7 +31,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 else:
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_qc')
+    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 
 class RadioButtonPage(QWizardPage):

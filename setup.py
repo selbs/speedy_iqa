@@ -3,17 +3,17 @@ from setuptools import setup, find_packages
 setup(
     author='Ian Selby',
     author_email='ias49@cam.ac.uk',
-    description='Tool to label single DICOM images using custom checkboxes',
-    name='Speedy QC',
-    url='https://github.com/selbs/speedy_qc',
+    description='Tool to label images against a reference image for image quality assessment',
+    name='Speedy IQA',
+    url='https://github.com/selbs/speedy_iqa',
     use_scm_version=True,
     setup_requires=["setuptools_scm>=7.0.4"],
     packages=find_packages(),
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'speedy_qc=speedy_qc.main:main',
-            'speedy_config=speedy_qc.config_wizard:main'
+            'speedy_iqa=speedy_iqa.main:main',
+            'speedy_config=speedy_iqa.wizard:main'
         ]
     },
     classifiers=[

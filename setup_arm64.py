@@ -1,22 +1,22 @@
 from setuptools import setup, find_packages
 
-APP = ['speedy_qc/main.py']
-OPTIONS = {'iconfile': 'speedy_qc/assets/icns/white_panel.icns', 'includes': ['_cffi_backend'],
-           'resources': ['speedy_qc/assets', 'speedy_qc/config.yml', 'speedy_qc/log.conf'],
+APP = ['speedy_iqa/main.py']
+OPTIONS = {'iconfile': 'speedy_iqa/assets/icns/white_panel.icns', 'includes': ['_cffi_backend'],
+           'resources': ['speedy_iqa/assets', 'speedy_iqa/config.yml', 'speedy_iqa/log.conf'],
            'dylib_excludes': ['libgfortran.3.dylib'],
            'frameworks': ['/opt/homebrew/Cellar/libffi/3.4.4/lib/libffi.8.dylib'],
            'dist_dir': 'dist/arm64',
            } | dict(plist=dict(NSRequiresAquaSystemAppearance=False,
-                               CFBundleIconFile="speedy_qc/assets/icns/white_panel.icns",
+                               CFBundleIconFile="speedy_iqa/assets/icns/white_panel.icns",
                                ))
 
 setup(
     app=APP,
     author='Ian Selby',
     author_email='ias49@cam.ac.uk',
-    description='Tool to label single DICOM images using custom checkboxes',
-    name='Speedy QC',
-    url='https://github.com/selbs/speedy_qc',
+    description='Tool to label images against a reference image for image quality assessment',
+    name='Speedy IQA',
+    url='https://github.com/selbs/speedy_iqa',
     use_scm_version=True,
     setup_requires=["setuptools_scm>=7.0.4", "py2app>=0.28"],
     packages=find_packages(),
@@ -24,8 +24,8 @@ setup(
     options={'py2app': OPTIONS},
     entry_points={
         'console_scripts': [
-            'speedy_qc=speedy_qc.main:main',
-            'speedy_config=speedy_qc.config_wizard:main'
+            'speedy_iqa=speedy_iqa.main:main',
+            'speedy_config=speedy_iqa.wizard:main'
         ]
     },
     classifiers=[

@@ -24,7 +24,7 @@ from typing import Optional, List
 import sys
 import json
 
-from speedy_qc.utils import ConnectionManager, open_yml_file, setup_logging
+from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -33,7 +33,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 else:
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_qc')
+    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 outer_setting = QSettings('SpeedyQC', 'DicomViewer')
 config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
@@ -47,7 +47,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 else:
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_qc')
+    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 
 class AboutMessageBox(QDialog):
@@ -190,7 +190,7 @@ class LoadMessageBox(QDialog):
 
         left_layout = QVBoxLayout()
 
-        # path = pkg_resources.resource_filename('speedy_qc', 'assets/3x/white@3x.png')
+        # path = pkg_resources.resource_filename('speedy_iqa', 'assets/3x/white@3x.png')
         path = os.path.join(resource_dir, 'assets/3x/white_panel@3x.png')
         logo = QPixmap(path)
 
@@ -398,7 +398,7 @@ class SetupWindow(QDialog):
 
         logo_layout.addItem(spacer)
 
-        # path = pkg_resources.resource_filename('speedy_qc', 'assets/3x/white@3x.png')
+        # path = pkg_resources.resource_filename('speedy_iqa', 'assets/3x/white@3x.png')
         path = os.path.join(resource_dir, 'assets/2x/white_panel@2x.png')
         logo = QPixmap(path).scaled(100, 100)
         icon_label = QLabel()

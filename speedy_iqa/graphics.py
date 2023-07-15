@@ -12,7 +12,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 from typing import Optional, Dict, List
-from speedy_qc.utils import ConnectionManager
+from speedy_iqa.utils import ConnectionManager
 import math
 
 

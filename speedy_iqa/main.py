@@ -13,7 +13,7 @@ Functions:
 Usage:
     Run this module as a script to start the Speedy QC application:
         - From the command line (if installed by pip):
-            `speedy_qc`
+            `speedy_iqa`
         - From python:
             `python -m main`
 """
@@ -26,9 +26,9 @@ from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 from qt_material import apply_stylesheet
 
-from speedy_qc.main_app import MainApp
-from speedy_qc.wizard import ConfigurationWizard
-from speedy_qc.windows import LoadMessageBox, SetupWindow
+from speedy_iqa.main_app import MainApp
+from speedy_iqa.wizard import ConfigurationWizard
+from speedy_iqa.windows import LoadMessageBox, SetupWindow
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -37,7 +37,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 else:
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_qc')
+    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 
 def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawesome'):
@@ -147,7 +147,7 @@ def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawes
             # This is a regular Python script
             resource_dir = os.path.dirname(os.path.abspath("__main__"))
         else:
-            resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_qc')
+            resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
         wizard = ConfigurationWizard(os.path.join(resource_dir, config_file))
         wizard.show()
 

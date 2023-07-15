@@ -27,9 +27,9 @@ from math import ceil
 import imageio as iio
 from functools import partial
 
-from speedy_qc.windows import AboutMessageBox
-from speedy_qc.utils import ConnectionManager, open_yml_file, setup_logging, bytescale, convert_to_checkstate
-from speedy_qc.graphics import CustomGraphicsView, BoundingBoxItem
+from speedy_iqa.windows import AboutMessageBox
+from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale, convert_to_checkstate
+from speedy_iqa.graphics import CustomGraphicsView, BoundingBoxItem
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -38,7 +38,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 else:
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_qc')
+    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 outer_setting = QSettings('SpeedyQC', 'DicomViewer')
 config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))

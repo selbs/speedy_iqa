@@ -1,9 +1,9 @@
 """
 utils.py
 
-Utility module for the speedy_qc application.
+Utility module for the speedy_iqa application.
 
-This module provides utility functions and classes to support the speedy_qc application, including:
+This module provides utility functions and classes to support the speedy_iqa application, including:
 
 1. Default configuration file creation and management.
 2. YAML file loading.
@@ -37,7 +37,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 else:
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_qc')
+    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 
 class Connection:
@@ -85,7 +85,7 @@ class ConnectionManager:
 
 def create_default_config() -> Dict:
     """
-    Creates a default config file in the speedy_qc directory.
+    Creates a default config file in the speedy_iqa directory.
 
     :return: dict, the default configuration data.
     """
@@ -102,7 +102,7 @@ def create_default_config() -> Dict:
 
     save_path = os.path.join(resource_dir, 'config.yml')
 
-    # Save the default config to the speedy_qc directory
+    # Save the default config to the speedy_iqa directory
     with open(save_path, 'w') as f:
         yaml.dump(default_config, f)
 
@@ -153,7 +153,7 @@ def setup_logging(log_out_path: str) -> Tuple[logging.Logger, logging.Logger]:
     :return: tuple (logger, console_msg), where logger is a configured logging.Logger instance, and console_msg is a
              reference to the same logger to be used for console messaging.
     """
-    full_log_file_path = os.path.expanduser(os.path.join(log_out_path, "speedy_qc.log"))
+    full_log_file_path = os.path.expanduser(os.path.join(log_out_path, "speedy_iqa.log"))
     os.makedirs(os.path.dirname(full_log_file_path), exist_ok=True)
     logging.config.fileConfig(os.path.join(resource_dir, 'log.conf'), defaults={'log_file_path': full_log_file_path})
     logger = logging.getLogger(__name__)
