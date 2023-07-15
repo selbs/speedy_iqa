@@ -14,7 +14,7 @@ Primarily for use on Mac OS X, but should work on Linux and Windows.
 
 > **Warning:** Please note that this application is still in development and there may be unresolved bugs and issues. Use at your own risk!
 
-[TOC]
+[[TOC]]
 
 Installation
 ------------
