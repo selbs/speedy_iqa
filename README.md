@@ -17,12 +17,12 @@ Primarily for use on Mac OS X, but should work on Linux and Windows.
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
-- [Outputs](#outputs)
-- [Checkboxes](#checkboxes)
-- [Bounding Boxes](#bounding-boxes)
-- [Radiobuttons](#radiobuttons)
-- [Progress](#progress)
-- [Keyboard Shortcuts](#keyboard-shortcuts)
+  - [Outputs](#outputs)
+    - [Checkboxes](#checkboxes)
+    - [Bounding Boxes](#bounding-boxes)
+    - [Radiobuttons](#radiobuttons)
+  - [Progress](#progress)
+  - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Customisation](#customisation)
 - [Configuration Wizard](#configuration-wizard)
 - [YAML File](#yaml-file)
@@ -92,8 +92,7 @@ will be `0` for `Normal` and `1` for `Abnormal`.
 
 Your progress through the folder of images is shown in the progress bar at the bottom of the window.
 
-Keyboard Shortcuts
-------------------
+### Keyboard Shortcuts
 
 |                      Key                      |       Action       |
 |:---------------------------------------------:|:------------------:|
