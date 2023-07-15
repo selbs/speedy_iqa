@@ -1,4 +1,4 @@
-Speedy IQA for Desktop <img src="https://github.com/selbs/speedy_iqa/blob/master/speedy_iqa/assets/logo.svg" alt="App Logo" width="200" style="float: right;">
+Speedy IQA for Desktop <img src="https://github.com/selbs/speedy_iqa/blob/master/speedy_iqa/assets/logo.png" alt="App Logo" width="200" style="float: right;">
 =====================
 
 Speedy IQA is an image viewer and customisable labeller for image quality assessment (IQA). The program may be
