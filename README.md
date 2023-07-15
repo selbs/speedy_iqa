@@ -17,15 +17,15 @@ Primarily for use on Mac OS X, but should work on Linux and Windows.
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Outputs](#outputs)
+  - [Inputs and Outputs](#inputs-and-outputs)
     - [Checkboxes](#checkboxes)
     - [Bounding Boxes](#bounding-boxes)
     - [Radiobuttons](#radiobuttons)
   - [Progress](#progress)
   - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Customisation](#customisation)
-- [Configuration Wizard](#configuration-wizard)
-- [YAML File](#yaml-file)
+  - [Configuration Wizard](#configuration-wizard)
+  - [YAML File](#yaml-file)
 - [Backup Files](#backup-files)
 - [Executable Application](#executable-application)
 
@@ -60,9 +60,7 @@ speedy_qc
 
 Alternatively, the app may be run from an executable (see below).
 
-### Outputs
-
-Outputs are stored in a .json file in a directory chosen by the user.
+### Inputs and Outputs
 
 #### Checkboxes
 
