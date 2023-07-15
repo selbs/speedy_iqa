@@ -14,7 +14,20 @@ Primarily for use on Mac OS X, but should work on Linux and Windows.
 
 > **Warning:** Please note that this application is still in development and there may be unresolved bugs and issues. Use at your own risk!
 
-[toc]
+## Table of Contents
+- [Installation](#installation)
+- [Usage](#usage)
+- [Outputs](#outputs)
+- [Checkboxes](#checkboxes)
+- [Bounding Boxes](#bounding-boxes)
+- [Radiobuttons](#radiobuttons)
+- [Progress](#progress)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Customisation](#customisation)
+- [Configuration Wizard](#configuration-wizard)
+- [YAML File](#yaml-file)
+- [Backup Files](#backup-files)
+- [Executable Application](#executable-application)
 
 Installation
 ------------
