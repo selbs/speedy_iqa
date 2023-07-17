@@ -79,7 +79,7 @@ Your progress through the folder of images is shown in the progress bar at the b
 |                 <kbd>N</kbd>                  |     Next image     |
 |          <kbd>+</kbd> / <kbd>=</kbd>          |      Zoom in       |
 |          <kbd>-</kbd> / <kbd>_</kbd>          |      Zoom out      |
-|                 <kbd>I</kbd>                  |  Invert grayscale  |
+|                 <kbd>I</kbd>                  |   Invert colours   |
 |                 <kbd>R</kbd>                  | Rotate image right |
 |                 <kbd>L</kbd>                  | Rotate image left  |
 |                 <kbd>S</kbd>                  |        Save        |
