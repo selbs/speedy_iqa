@@ -102,8 +102,9 @@ class MainApp(QMainWindow):
             self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith((
                 '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
             ))])
-            self.dir_path = self.settings.value("image_path", "")
-            self.reference_dir_path = self.settings.value("reference_path", "")
+            self.dir_path = self.settings.value("image_path", ".")
+            self.reference_dir_path = self.settings.value("reference_path", ".")
+            self.reference_delimiter = self.settings.value("reference_delimiter", "__")
             self.viewed_values = {f: False for f in self.file_list}
             self.rotation = {f: 0 for f in self.file_list}
             self.notes = {f: "" for f in self.file_list}
@@ -584,13 +585,13 @@ class MainApp(QMainWindow):
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
 
-        reference_name = self.file_list[self.current_index]
+        reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+        reference_name = reference_name + img_extension
         reference_path = os.path.join(self.reference_dir_path, reference_name)
-        reference_extension = os.path.splitext(reference_path)[1]
 
         try:
             self.image = self.read_file(img_path, img_extension)
-            self.reference_image = self.read_file(reference_path, reference_extension)
+            self.reference_image = self.read_file(reference_path, img_extension)
         except Exception as e:
             # Handle the exception (e.g. display an error message)
             QMessageBox.critical(self, "Error", f"Failed to load file:\n{str(e)}", QMessageBox.StandardButton.Ok,
@@ -1138,6 +1139,7 @@ class MainApp(QMainWindow):
         data = {
             'image_directory': self.dir_path,
             'reference_image_directory': self.reference_dir_path,
+            'reference_delimiter': self.reference_delimiter,
             'files': []
         }
         for filename in self.file_list:
@@ -1187,6 +1189,7 @@ class MainApp(QMainWindow):
             self.file_list = [entry['filename'] for entry in data['files']]
             self.dir_path = data['image_directory']
             self.reference_dir_path = data['reference_image_directory']
+            self.reference_delimiter = data['reference_delimiter']
 
             for entry in data['files']:
                 filename = entry['filename']
