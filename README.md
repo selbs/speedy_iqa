@@ -10,10 +10,10 @@ created from the source code.
 
 Primarily developed for use on Mac OS X, but should work on Linux and Windows.
 
-![Screenshot](speedy_iqa/assets/screenshot.png)
-
 > **Warning:** Please note that this application is still in development and there may be unresolved bugs and issues. 
 > Use at your own risk!
+
+![Screenshot](speedy_iqa/assets/screenshot.png)
 
 ## Table of Contents
 - [Installation](#installation)
