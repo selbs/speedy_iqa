@@ -82,7 +82,7 @@ Your progress through the folder of images is shown in the progress bar at the b
 |                 <kbd>I</kbd>                  |  Invert grayscale  |
 |                 <kbd>R</kbd>                  | Rotate image right |
 |                 <kbd>L</kbd>                  | Rotate image left  |
-|                 <kbd>S</kbd>                  |    Save to CSV     |
+|                 <kbd>S</kbd>                  |        Save        |
 | <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd> |        Quit        |
 |            <kbd>Cmd</kbd> + Scroll            |      Contrast      |
 |           <kbd>Shift</kbd> + Scroll           |     Brightness     |
