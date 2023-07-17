@@ -29,7 +29,7 @@ from functools import partial
 
 from speedy_iqa.windows import AboutMessageBox
 from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale, convert_to_checkstate
-from speedy_iqa.graphics import CustomGraphicsView, BoundingBoxItem
+from speedy_iqa.graphics import CustomGraphicsView
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -40,7 +40,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
 else:
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
-outer_setting = QSettings('SpeedyQC', 'DicomViewer')
+outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
 config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
 config = open_yml_file(os.path.join(resource_dir, config_file))
 logger, console_msg = setup_logging(config['log_dir'])
@@ -74,12 +74,55 @@ class MainApp(QMainWindow):
         self.current_index = 0
         self.checkboxes = {}
         self.radiobuttons = {}
-        self.ratiobuttons_boxes = {}
+        self.radiobuttons_boxes = {}
         self.colors = {}
-        self.dir_path = self.settings.value("image_path", "")
+        self.viewed_values = {}
+        self.rotation = {}
+        self.notes = {}
+        self.checkbox_values = {}
+        self.radiobutton_values = {}
+        self.file_list = []
+
+        # Load the configuration file
+        config = self.open_config_yml()
+        self.findings = config.get('checkboxes', [])
+        self.radiobutton_groups1 = config.get('radiobuttons_page1', {})
+        self.radiobutton_groups2 = config.get('radiobuttons_page2', {})
+        # self.task = "medical diagnosis"
+        self.tristate_checkboxes = config.get('tristate_checkboxes', False)
+        self.max_backups = config.get('max_backups', 10)
+        self.backup_dir = config.get('backup_dir', os.path.expanduser('~/speedy_iqa/backups'))
+        self.backup_dir = os.path.expanduser(self.backup_dir)
+        self.backup_interval = config.get('backup_interval', 5)
+        self.task = config.get('task', 'General use')
+
         self.json_path = self.settings.value("json_path", "")
+        self.loaded = self.load_from_json()
+        if not self.loaded:
+            self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith((
+                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
+            ))])
+            self.dir_path = self.settings.value("image_path", "")
+            self.reference_dir_path = self.settings.value("reference_path", "")
+            self.viewed_values = {f: False for f in self.file_list}
+            self.rotation = {f: 0 for f in self.file_list}
+            self.notes = {f: "" for f in self.file_list}
+            if bool(self.findings):
+                self.checkbox_values = {f: {finding: 0 for finding in self.findings} for f in self.file_list}
+            else:
+                self.checkbox_values = {f: {} for f in self.file_list}
+            if bool(self.radiobutton_groups1):
+                self.radiobutton_values = {f: {group['title']: None for group in self.radiobutton_groups1} for f in
+                                           self.file_list}
+            if bool(self.radiobutton_groups2):
+                self.radiobutton_values = {f: {group['title']: None for group in self.radiobutton_groups2} for f in
+                                           self.file_list}
+            if not bool(self.radiobutton_groups1) and not bool(self.radiobutton_groups2):
+                self.radiobutton_values = {f: {} for f in self.file_list}
+
         self.backup_interval = self.settings.value("backup_interval", 5, type=int)
         self.image = None
+        self.reference_image = None
 
         # Set the initial window size
         self.resize(self.settings.value('window_size', QSize(800, 600)))
@@ -94,10 +137,13 @@ class MainApp(QMainWindow):
         # Set the icons dictionary used in the main window
         self.icons = {
             'save': qta.icon("mdi.content-save-all"),
+            'save_as': qta.icon("mdi.content-save-edit"),
             'next': qta.icon("mdi.arrow-right-circle"),
             'prev': qta.icon("mdi.arrow-left-circle"),
-            'ww': qta.icon("mdi.arrow-expand-horizontal"),
-            'wc': qta.icon("mdi.format-horizontal-align-center"),
+
+            'ww': qta.icon("mdi.contrast-box"),
+            'wc': qta.icon("mdi.brightness-5"),
+
             'inv': qta.icon("mdi.invert-colors"),
             'rot_right': qta.icon("mdi.rotate-right"),
             'rot_left': qta.icon("mdi.rotate-left"),
@@ -111,65 +157,38 @@ class MainApp(QMainWindow):
         }
 
         # Set the window icon
-        icon_path = os.path.join(resource_dir, 'assets/icns/white_panel.icns')
+        icon_path = os.path.join(resource_dir, 'assets/logo.icns')
         self.setWindowIcon(QIcon(icon_path))
 
         # Set the central widget to the image viewer
         self.image_view = CustomGraphicsView(self, main_window=True)
-        self.image_view.resize(self.size())
-
-        # Load the image file list
-        # self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith('.dcm')])
-        self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith((
-                    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
-                ))])
-
-        # Load the configuration file
-        config = self.open_config_yml()
-        self.findings = config.get('checkboxes', [])
-        self.radiobutton_groups = config.get('radiobuttons', {})
-        # self.task = "medical diagnosis"
-        self.tristate_checkboxes = config.get('tristate_checkboxes', False)
-        self.max_backups = config.get('max_backups', 10)
-        self.backup_dir = config.get('backup_dir', os.path.expanduser('~/speedy_qc/backups'))
-        self.backup_dir = os.path.expanduser(self.backup_dir)
-        self.backup_interval = config.get('backup_interval', 5)
-
-        # Initialize dictionaries for outputs
-        self.viewed_values = {f: False for f in self.file_list}
-        self.rotation = {f: 0 for f in self.file_list}
-        self.notes = {f: "" for f in self.file_list}
-        if bool(self.findings):
-            self.checkbox_values = {f: {finding: 0 for finding in self.findings} for f in self.file_list}
-        else:
-            self.checkbox_values = {f: {} for f in self.file_list}
-        if bool(self.radiobutton_groups):
-            self.radiobutton_values = {f: {group['title']: None for group in self.radiobutton_groups} for f in self.file_list}
-        else:
-            self.radiobutton_values = {f: {} for f in self.file_list}
-        self.bboxes = {f: {} for f in self.file_list}
+        self.reference_view = CustomGraphicsView(self, main_window=True)
 
         # Assign colors to findings
         self.assign_colors_to_findings()
 
         # Load the checkbox values from json file
-        self.loaded = self.load_from_json()
         if self.loaded:
             self.restore_from_saved_state()
 
         # Now set up the main window layout and toolbars
-        main_layout = QVBoxLayout()
-        self.setWindowTitle(f"Speedy QC - File: {self.file_list[self.current_index]}")
+        main_layout = QHBoxLayout()
+        self.setWindowTitle(f"Speedy IQA - File: {self.file_list[self.current_index]}")
 
         # Create the image scene and set as the central widget
         self.image_scene = QGraphicsScene(self)
+        self.reference_scene = QGraphicsScene(self)
         self.pixmap_item = QGraphicsPixmapItem()
+        self.reference_pixmap_item = QGraphicsPixmapItem()
         self.load_file()
-        self.image_scene.addItem(self.pixmap_item)
-        self.image_view.setScene(self.image_scene)
-        main_layout.addWidget(self.image_view)
-        self.apply_stored_rotation()    # Apply any rotation previously applied to the image
         self.load_image()
+        self.image_scene.addItem(self.pixmap_item)
+        self.reference_scene.addItem(self.reference_pixmap_item)
+        self.image_view.setScene(self.image_scene)
+        self.reference_view.setScene(self.reference_scene)
+        main_layout.addWidget(self.image_view)
+        main_layout.addWidget(self.reference_view)
+        self.apply_stored_rotation()    # Apply any rotation previously applied to the image
         central_widget = QWidget(self)
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
@@ -177,7 +196,7 @@ class MainApp(QMainWindow):
         # Create the navigation toolbar
         self.file_tool_bar = QToolBar(self)
         # Create the logo action
-        logo_path = os.path.join(resource_dir, 'assets/1x/white_panel.png')
+        logo_path = os.path.join(resource_dir, 'assets/logo.png')
         logo_pixmap = QPixmap(logo_path)
         self.logoAction = QAction(QIcon(logo_pixmap), "&About", self)
         self.file_tool_bar.addAction(self.logoAction)
@@ -192,18 +211,31 @@ class MainApp(QMainWindow):
         self.labelling_toolbar = QToolBar(self)
         self.viewed_label = QLabel(self)
         self.viewed_icon = QLabel(self)
+
+        for page in [1,2]:
+            self.radiobuttons[page] = {}
+            self.radiobuttons_boxes[page] = {}
         if bool(self.findings):
             self.create_checkboxes()
-        if bool(self.radiobutton_groups):
-            for group in self.radiobutton_groups:
-                self.create_radiobuttons(group['title'], group['labels'])
+        if bool(self.radiobutton_groups1):
+            for group in self.radiobutton_groups1:
+                self.create_radiobuttons(1, group['title'], group['labels'])
+        if bool(self.radiobutton_groups2):
+            for group in self.radiobutton_groups2:
+                self.create_radiobuttons(2, group['title'], group['labels'])
         self.textbox_label = QLabel(self)
         self.textbox = QTextEdit(self)
+        self.stack = QStackedWidget()
+        # self.stack = QStackedLayout(self)
+        self.page1 = QWidget()
+        self.page1_layout = QVBoxLayout(self.page1)
+        self.page2 = QWidget()
+        self.page2_layout = QVBoxLayout(self.page2)
         self.set_labelling_toolbar()
 
         # Create the image toolbar for image manipulation
         self.image_toolbar = QToolBar(self)
-        self.invert_action = QAction(self.icons['inv'], "Invert Grayscale", self)
+        self.invert_action = QAction(self.icons['inv'], "Invert", self)
         self.image_toolbar.addAction(self.invert_action)
         self.rotate_left_action = QAction(self.icons['rot_left'], "Rotate 90° Left", self)
         self.image_toolbar.addAction(self.rotate_left_action)
@@ -225,10 +257,18 @@ class MainApp(QMainWindow):
                 background: {get_theme('dark_blue.xml')['primaryColor']};
                 }}
         """)
+        self.reference_view.setStyleSheet(f"""
+                    QScrollBar::handle:vertical {{
+                        background: {get_theme('dark_blue.xml')['primaryColor']};
+                        }}
+                    QScrollBar::handle:horizontal {{
+                        background: {get_theme('dark_blue.xml')['primaryColor']};
+                        }}
+                """)
 
         # Create sliders for windowing
-        self.window_center_label = QAction(self.icons['wc'], "Window Center", self)
-        self.window_width_label = QAction(self.icons['ww'], "Window Width", self)
+        self.window_center_label = QAction(self.icons['wc'], "Brightness", self)
+        self.window_width_label = QAction(self.icons['ww'], "Contrast", self)
         self.window_center_slider = QSlider(Qt.Orientation.Horizontal)
         self.window_width_slider = QSlider(Qt.Orientation.Horizontal)
 
@@ -236,9 +276,11 @@ class MainApp(QMainWindow):
         self.window_center_slider.setValue(127)
         self.window_width_slider.setRange(1, 450)
         self.window_width_slider.setValue(255)
+        self.window_center_slider.setInvertedAppearance(True)
+        self.window_width_slider.setInvertedAppearance(True)
 
         # Create a space between the windowing sliders and the next button
-        spacer = QSpacerItem(16, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         spacer_layout = QHBoxLayout()
         spacer_widget = QWidget()
         spacer_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -247,23 +289,40 @@ class MainApp(QMainWindow):
 
         # Create a reset window button and label the window sliders
         self.image_toolbar.addSeparator()
-        self.reset_window_action = QAction(self.icons['reset_win'], "Reset Windowing", self)
+        self.reset_window_action = QAction(self.icons['reset_win'], "Reset Brightness and Contrast", self)
         self.image_toolbar.addAction(self.reset_window_action)
         self.image_toolbar.addAction(self.window_center_label)
         self.image_toolbar.addWidget(self.window_center_slider)
         self.image_toolbar.addAction(self.window_width_label)
         self.image_toolbar.addWidget(self.window_width_slider)
         self.image_toolbar.addWidget(spacer_widget)
-
-        # Add the image toolbar to the top of the main window
+        self.image_toolbar.addSeparator()
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.image_toolbar)
 
-        # Add buttons to the navigator toolbar to navigate to previous and next image
         self.nav_toolbar = QToolBar(self)
+        spacer = QWidget()
+        line_color = get_theme("dark_blue.xml")['secondaryLightColor']
+        spacer.setStyleSheet(f"border-bottom: 1px solid {line_color};")
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.nav_toolbar.addWidget(spacer)
+        self.nav_toolbar.setMovable(False)
+        self.nav_toolbar.addSeparator()
+        # Add buttons to the navigator toolbar to navigate to previous and next image
         self.prevAction = QAction(self.icons['prev'], "&Back", self)
         self.nextAction = QAction(self.icons['next'], "&Next", self)
-        self.nav_toolbar.addAction(self.prevAction)
-        self.nav_toolbar.addAction(self.nextAction)
+        action_width = self.labelling_toolbar.sizeHint().width() / 2
+
+        self.prevButton = QToolButton()
+        self.prevButton.setDefaultAction(self.prevAction)
+        self.prevButton.setFixedWidth(action_width)  # Set width to 100px
+        self.nav_toolbar.addWidget(self.prevButton)
+
+        self.nextButton = QToolButton()
+        self.nextButton.setDefaultAction(self.nextAction)
+        self.nextButton.setFixedWidth(action_width)  # Set width to 200px
+        self.nav_toolbar.addWidget(self.nextButton)
+
+        self.nav_toolbar.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.nav_toolbar)
 
         # Initiate connections between buttons / sliders and their functions
@@ -278,9 +337,6 @@ class MainApp(QMainWindow):
         self.timer.setInterval(self.backup_interval * 60 * 1000)  # convert minutes to milliseconds
         self.connection_manager.connect(self.timer.timeout, self.backup_file)
         self.timer.start()
-
-        # Add and rotate the bounding boxes as necessary to match the rotation of the first image
-        self.prep_first_image()
 
         # create a progress bar
         self.progress_bar = QProgressBar()
@@ -298,6 +354,13 @@ class MainApp(QMainWindow):
         percent_viewed = 100 * len([value for value in self.viewed_values.values() if value]) / len(self.file_list)
         self.update_progress_bar(percent_viewed)
 
+        QTimer.singleShot(0, self.set_items_on_initial_size)
+
+    def set_items_on_initial_size(self):
+        self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self.delayed_visibility_update()
+
     def update_progress_bar(self, progress: float):
         """
         Update the progress bar with the current progress
@@ -307,25 +370,16 @@ class MainApp(QMainWindow):
         """
         self.progress_bar.setValue(int(progress))
 
-    def prep_first_image(self):
-        """
-        Add and rotate the bounding boxes as necessary to match the rotation of the first image
-        """
-        self.rotate_bounding_boxes(
-            self.file_list[self.current_index], self.rotation[self.file_list[self.current_index]]
-        )
-        self.image_view.add_bboxes(self.bboxes.get(self.file_list[self.current_index], {}))
-
     def init_connections(self):
         """
         Initiate connections between buttons / sliders and their functions
         """
         self.connection_manager.connect(self.textbox.textChanged, self.on_text_changed)
-        self.connection_manager.connect(self.invert_action.triggered, self.invert_grayscale)
+        self.connection_manager.connect(self.invert_action.triggered, self.invert_colours)
         self.connection_manager.connect(self.rotate_left_action.triggered, self.rotate_image_left)
         self.connection_manager.connect(self.rotate_right_action.triggered, self.rotate_image_right)
-        self.connection_manager.connect(self.zoom_in_action.triggered, self.image_view.zoom_in)
-        self.connection_manager.connect(self.zoom_out_action.triggered, self.image_view.zoom_out)
+        self.connection_manager.connect(self.zoom_in_action.triggered, self.zoom_in)
+        self.connection_manager.connect(self.zoom_out_action.triggered, self.zoom_out)
         self.connection_manager.connect(self.reset_window_action.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.window_center_slider.valueChanged, self.update_image)
         self.connection_manager.connect(self.window_width_slider.valueChanged, self.update_image)
@@ -336,6 +390,32 @@ class MainApp(QMainWindow):
         self.connection_manager.connect(self.saveAction.triggered, self.save_to_json)
         self.connection_manager.connect(self.exitAction.triggered, self.quit_app)
         self.connection_manager.connect(self.logoAction.triggered, self.show_about)
+
+        self.connection_manager.connect(self.image_view.horizontalScrollBar().valueChanged,
+                                        self.sync_horizontal_scrollbars)
+        self.connection_manager.connect(self.reference_view.horizontalScrollBar().valueChanged,
+                                        self.sync_horizontal_scrollbars)
+
+        self.connection_manager.connect(self.image_view.verticalScrollBar().valueChanged,
+                                        self.sync_vertical_scrollbars)
+        self.connection_manager.connect(self.reference_view.verticalScrollBar().valueChanged,
+                                        self.sync_vertical_scrollbars)
+
+    def sync_horizontal_scrollbars(self, value):
+        self.image_view.horizontalScrollBar().setValue(value)
+        self.reference_view.horizontalScrollBar().setValue(value)
+
+    def sync_vertical_scrollbars(self, value):
+        self.image_view.verticalScrollBar().setValue(value)
+        self.reference_view.verticalScrollBar().setValue(value)
+
+    def zoom_in(self):
+        self.image_view.zoom_in()
+        self.reference_view.zoom_in()
+
+    def zoom_out(self):
+        self.image_view.zoom_out()
+        self.reference_view.zoom_out()
 
     def backup_file(self) -> List[str]:
         """
@@ -423,47 +503,61 @@ class MainApp(QMainWindow):
         text_entered = textbox.toPlainText().replace("\n", " ").replace(",", ";")
         self.notes[self.file_list[self.current_index]] = text_entered
 
-    def invert_grayscale(self):
+    def invert_colours(self):
         """
-        Inverts the grayscale image.
+        Inverts the colors of the image.
         """
-        if self.image is not None:
-            # Invert the image
-            inverted_image = 255 - self.image
+        for i, image in enumerate([self.image, self.reference_image]):
+            if image is not None:
+                # Invert the image
+                inverted_image = image.copy()
+                inverted_image[..., :3] = 255 - image[..., :3]
 
-            # Update the QPixmap
-            qimage = array2qimage(inverted_image)
-            pixmap = QPixmap.fromImage(qimage)
-            self.pixmap_item.setPixmap(pixmap)
-
-            # Update the image attribute to store the inverted image
-            self.image = inverted_image
+                # Update the QPixmap
+                qimage = array2qimage(inverted_image)
+                pixmap = QPixmap.fromImage(qimage)
+                if i == 0:
+                    self.pixmap_item.setPixmap(pixmap)
+                    self.image = inverted_image
+                else:
+                    self.reference_pixmap_item.setPixmap(pixmap)
+                    self.reference_image = inverted_image
 
     def rotate_image_right(self):
         """
         Rotates the image 90 degrees to the right.
         """
-        self.bboxes[self.file_list[self.current_index]] = self.image_view.rect_items.copy()
         # Rotate the image by 90 degrees and update the display
         rotated_image = np.rot90(self.image, k=-1)
+        rotated_reference_image = np.rot90(self.reference_image, k=-1)
         self.rotation[self.file_list[self.current_index]] = (self.rotation[self.file_list[self.current_index]]-90) % 360
         self.image = rotated_image
+        self.reference_image = rotated_reference_image
         self.load_image()
         self.update_image()
-        self.rotate_bounding_boxes(self.file_list[self.current_index], -90)
+        self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self.image_view.scale(self.image_view.zoom, self.image_view.zoom)
+        self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(),
+                                      Qt.AspectRatioMode.KeepAspectRatio)
+        self.reference_view.scale(self.reference_view.zoom, self.reference_view.zoom)
 
     def rotate_image_left(self):
         """
         Rotates the image 90 degrees to the left.
         """
-        self.bboxes[self.file_list[self.current_index]] = self.image_view.rect_items.copy()
         # Rotate the image by 90 degrees and update the display
         rotated_image = np.rot90(self.image, k=1)
+        rotated_reference_image = np.rot90(self.reference_image, k=1)
         self.rotation[self.file_list[self.current_index]] = (self.rotation[self.file_list[self.current_index]]+90) % 360
         self.image = rotated_image
+        self.reference_image = rotated_reference_image
         self.load_image()
         self.update_image()
-        self.rotate_bounding_boxes(self.file_list[self.current_index], 90)
+        self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self.image_view.scale(self.image_view.zoom, self.image_view.zoom)
+        self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(),
+                                      Qt.AspectRatioMode.KeepAspectRatio)
+        self.reference_view.scale(self.reference_view.zoom, self.reference_view.zoom)
 
     def apply_stored_rotation(self):
         """
@@ -471,26 +565,7 @@ class MainApp(QMainWindow):
         """
         rotation_angle = self.rotation.get(self.file_list[self.current_index], 0)
         self.image = np.rot90(self.image, k=rotation_angle // 90)
-
-    def rotate_bounding_boxes(self, filename: str, rotation_angle: int, reverse: bool = False):
-        """
-        Rotates the bounding boxes around the center of the image to match the image rotation.
-
-        :param filename: The name of the image file.
-        :type filename: str
-        :param rotation_angle: The angle to rotate the bounding boxes by.
-        :type rotation_angle: int
-        :param reverse: If True, the rotation is reversed, default is False.
-        :type reverse: bool
-        """
-        if not reverse:
-            rotation_angle = -rotation_angle
-
-        if rotation_angle != 0:
-            center = self.pixmap_item.boundingRect().center()
-            for finding, bboxes in self.bboxes[filename].items():
-                for bbox in bboxes:
-                    bbox.rotate(rotation_angle, center)
+        self.reference_image = np.rot90(self.reference_image, k=rotation_angle // 90)
 
     def resizeEvent(self, event: QResizeEvent):
         """
@@ -506,42 +581,58 @@ class MainApp(QMainWindow):
         """
         Loads the image file and applies the look-up tables.
         """
-        file_path = os.path.join(self.dir_path, self.file_list[self.current_index])
-        file_extension = os.path.splitext(file_path)[1]
+        img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
+        img_extension = os.path.splitext(img_path)[1]
+
+        reference_name = self.file_list[self.current_index]
+        reference_path = os.path.join(self.reference_dir_path, reference_name)
+        reference_extension = os.path.splitext(reference_path)[1]
 
         try:
-            if file_extension == ".dcm":
-                # Read the DICOM file
-                ds = pydicom.dcmread(file_path)
-                self.image = ds.pixel_array
-                self.image = apply_modality_lut(self.image, ds)
-                self.image = apply_voi_lut(self.image.astype(int), ds, 0)
-                # Convert the pixel array to an 8-bit integer array
-                if ds.BitsStored != 8:
-                    _min = np.amin(self.image)
-                    _max = np.amax(self.image)
-                    self.image = (self.image - _min) * 255.0 / (_max - _min)
-                    self.image = np.uint8(self.image)
-            else:
-                # Read the image file
-                raw_image = iio.imread(file_path)
-                if raw_image.dtype == np.uint8:
-                    self.image = bytescale(raw_image)
+            self.image = self.read_file(img_path, img_extension)
+            self.reference_image = self.read_file(reference_path, reference_extension)
         except Exception as e:
             # Handle the exception (e.g. display an error message)
             QMessageBox.critical(self, "Error", f"Failed to load file:\n{str(e)}", QMessageBox.StandardButton.Ok,
                                  defaultButton=QMessageBox.StandardButton.Ok)
             self.next_image(prev_failed=True)
-            logger.exception(f"Failed to load file: {file_path} - Message: {str(e)}")
+            logger.exception(f"Failed to load file: {img_path} - Message: {str(e)}")
+
+    @staticmethod
+    def read_file(file_path, file_extension):
+        image = None
+        if file_extension == ".dcm":
+            # Read the DICOM file
+            ds = pydicom.dcmread(file_path)
+            image = ds.pixel_array
+            image = apply_modality_lut(image, ds)
+            image = apply_voi_lut(image.astype(int), ds, 0)
+            # Convert the pixel array to an 8-bit integer array
+            if ds.BitsStored != 8:
+                _min = np.amin(image)
+                _max = np.amax(image)
+                image = (image - _min) * 255.0 / (_max - _min)
+                image = np.uint8(image)
+        else:
+            # Read the image file
+            raw_image = iio.imread(file_path)
+            if raw_image.dtype == np.uint8:
+                image = bytescale(raw_image)
+        return image
 
     def load_image(self):
         """
         Loads the image into the image view.
         """
-        # Load the image
+        # Load the main image
         qimage = array2qimage(self.image)
         self.pixmap = QPixmap.fromImage(qimage)
         self.pixmap_item.setPixmap(self.pixmap)
+
+        # Load the reference image
+        reference_qimage = array2qimage(self.reference_image)
+        self.reference_pixmap = QPixmap.fromImage(reference_qimage)
+        self.reference_pixmap_item.setPixmap(self.reference_pixmap)
 
     def update_image(self):
         """
@@ -550,16 +641,20 @@ class MainApp(QMainWindow):
         window_center = self.window_center_slider.value()
         window_width = self.window_width_slider.value()
 
-        img = np.copy(self.image)
-        img = img.astype(np.float16)
-        img = (img - window_center + 0.5 * window_width) / window_width
-        img[img < 0] = 0
-        img[img > 1] = 1
-        img = (img * 255).astype(np.uint8)
-
-        qimage = array2qimage(img)
-        self.pixmap = QPixmap.fromImage(qimage)
-        self.pixmap_item.setPixmap(self.pixmap)
+        for i, image in enumerate([self.image, self.reference_image]):
+            img = np.copy(image)
+            img = img.astype(np.float16)
+            img = (img - window_center + 0.5 * window_width) / window_width
+            img[img < 0] = 0
+            img[img > 1] = 1
+            img = (img * 255).astype(np.uint8)
+            qimage = array2qimage(img)
+            if i == 0:
+                self.pixmap = QPixmap.fromImage(qimage)
+                self.pixmap_item.setPixmap(self.pixmap)
+            else:
+                self.reference_pixmap = QPixmap.fromImage(qimage)
+                self.reference_pixmap_item.setPixmap(self.reference_pixmap)
 
     def create_checkboxes(self):
         """
@@ -589,7 +684,7 @@ class MainApp(QMainWindow):
             self.checkboxes[cbox].setCheckState(convert_to_checkstate(self.checkbox_values.get(filename, 0).get(cbox, 0)))
             self.connection_manager.connect(self.checkboxes[cbox].stateChanged, self.on_checkbox_changed)
 
-    def create_radiobuttons(self, name, options_list):
+    def create_radiobuttons(self, page, name, options_list):
         """
         Creates the radio buttons for the given options.
 
@@ -609,16 +704,18 @@ class MainApp(QMainWindow):
         # Create the radio buttons
         for i, option in enumerate(options):
             radiobutton = QRadioButton(option)
+            radiobutton.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             row = i // num_columns
             col = i % num_columns
             layout.addWidget(radiobutton, row, col)
             button_group.addButton(radiobutton, i)
 
         group_box.setLayout(layout)
-        self.ratiobuttons_boxes[name] = group_box
-        self.radiobuttons[name] = button_group
-        self.set_checked_radiobuttons()
-        self.connection_manager.connect(self.radiobuttons[name].idToggled,
+        group_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.radiobuttons_boxes[page][name] = group_box
+        self.radiobuttons[page][name] = button_group
+        self.set_checked_radiobuttons(page)
+        self.connection_manager.connect(self.radiobuttons[page][name].idToggled,
                                         partial(self.on_radiobutton_changed, name))
 
     def on_radiobutton_changed(self, name, id, checked):
@@ -639,26 +736,30 @@ class MainApp(QMainWindow):
         """
         Unchecks all the radio buttons.
         """
-        for button_group in self.radiobuttons.values():
-            button_group.setExclusive(False)
-            for button in button_group.buttons():
-                button.setChecked(False)
-            button_group.setExclusive(True)
+        for i in [1, 2]:
+            if i in self.radiobuttons:
+                for button_group in self.radiobuttons[i].values():
+                    button_group.setExclusive(False)
+                    for button in button_group.buttons():
+                        button.setChecked(False)
+                    button_group.setExclusive(True)
 
     def update_all_radiobutton_values(self):
         """
         Updates the values of all the radio buttons.
         """
-        for name, button_group in self.radiobuttons.items():
-            self.radiobutton_values[self.file_list[self.current_index]][name] = button_group.checkedId()
+        for i in [1, 2]:
+            if i in self.radiobuttons:
+                for name, button_group in self.radiobuttons[i].items():
+                    self.radiobutton_values[self.file_list[self.current_index]][name] = button_group.checkedId()
 
-    def set_checked_radiobuttons(self):
+    def set_checked_radiobuttons(self, page):
         """
         Sets the checked radio buttons.
         """
-        for name in self.radiobuttons.keys():
+        for name in self.radiobuttons[page].keys():
             if self.radiobutton_values.get(self.file_list[self.current_index]).get(name) is not None:
-                self.radiobuttons[name].button(
+                self.radiobuttons[page][name].button(
                     self.radiobutton_values.get(self.file_list[self.current_index]).get(name)
                 ).setChecked(True)
             else:
@@ -668,20 +769,25 @@ class MainApp(QMainWindow):
         """
         Sets the checkbox toolbar.
         """
-        # Create a scroll area and widget
-        scroll = QScrollArea(self)
-        scroll.setWidgetResizable(True)
-        widget = QWidget()
-        layout = QVBoxLayout()
-        widget.setLayout(layout)
-        scroll.setWidget(widget)
+        # Ensure always vertical orientation with handle at the top
+        self.connection_manager.connect(
+            self.labelling_toolbar.orientationChanged, self.correct_labelling_toolbar_orientation
+        )
+        # Ensure it can only be added to the left or right side
+        self.labelling_toolbar.setAllowedAreas(Qt.ToolBarArea.LeftToolBarArea | Qt.ToolBarArea.RightToolBarArea)
 
-        spacer_item = QSpacerItem(0, 5, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        spacer_widget = QWidget()
-        spacer_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        spacer_widget.setLayout(QHBoxLayout())
-        spacer_widget.layout().addItem(spacer_item)
-        layout.addWidget(spacer_widget)
+        layout_widget = QWidget()
+        layout = QVBoxLayout(layout_widget)
+        # scroll = QScrollArea(self)
+        # scroll.setWidgetResizable(True)
+        # scroll.setWidget(layout_widget)
+        # scroll.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
+
+        spacer1 = QWidget()
+        spacer1.setMinimumHeight(10)
+        spacer1.setMaximumHeight(30)
+        spacer1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.addWidget(spacer1)
 
         self.viewed_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.viewed_label.setObjectName("viewed_label")
@@ -694,37 +800,76 @@ class MainApp(QMainWindow):
         )
         layout.addWidget(self.viewed_icon)
 
-        # self.labelling_toolbar.addWidget(spacer_widget)
-        spacer_widget = QWidget()
-        spacer_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        spacer_widget.setLayout(QHBoxLayout())
-        spacer_widget.layout().addItem(spacer_item)
-        layout.addWidget(spacer_widget)
+        spacer2 = QWidget()
+        spacer2.setMinimumHeight(10)
+        spacer2.setMaximumHeight(30)
+        spacer2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.addWidget(spacer2)
 
-        if bool(self.findings):
-            checkbox_heading = QLabel(self)
-            checkbox_heading.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            checkbox_heading.setText("FINDINGS:")
-            layout.addWidget(checkbox_heading)
+        radiobutton_heading = QLabel(self)
+        radiobutton_heading.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        radiobutton_heading.setText(f"For {self.task}, please rate the image relative to the reference:".upper())
+        radiobutton_heading.setWordWrap(True)
+        radiobutton_heading.setStyleSheet("QLabel { margin-right: 10px; }")
+        radiobutton_heading.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        layout.addWidget(radiobutton_heading)
 
-            checkbox_layout = QVBoxLayout()
-            for finding, checkbox in self.checkboxes.items():
-                checkbox_layout.addWidget(checkbox)
+        if self.radiobutton_groups1 is not None:
+            radiobutton_widget1 = QWidget()
+            radiobutton_widget1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            radiobutton_layout1 = QVBoxLayout()
+            for radio_group_name, radio_group_box in self.radiobuttons_boxes[1].items():
+                radiobutton_layout1.addWidget(radio_group_box)
 
-            checkbox_layout.addItem(spacer_item)
-            checkbox_layout.addItem(spacer_item)
-            checkbox_widget = QWidget(self)
-            checkbox_widget.setLayout(checkbox_layout)
+            radiobutton_layout1.addStretch(1)
 
-            layout.addWidget(checkbox_widget)
+            radiobutton_widget1.setLayout(radiobutton_layout1)
+            # Create a scroll area for the radio buttons
+            scroll1 = QScrollArea()
+            scroll1.setWidgetResizable(True)
+            scroll1.setWidget(radiobutton_widget1)
+            scroll1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            scroll1.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            # Add the scroll area to the page layout
+            self.page1_layout.addWidget(scroll1)
 
-        if self.radiobutton_groups is not None:
-            # radiobutton_heading = QLabel(self)
-            # radiobutton_heading.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            # radiobutton_heading.setText(f"For {self.task}, please rate:")
-            # self.labelling_toolbar.addWidget(radiobutton_heading)
-            for radio_group_name, radio_group_box in self.ratiobuttons_boxes.items():
-                layout.addWidget(radio_group_box)
+        self.page1_layout.addWidget(QPushButton('Continue', clicked=self.show_page2))
+        self.page1.setLayout(self.page1_layout)
+        self.page1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        if self.radiobutton_groups2 is not None:
+            radiobutton_widget2 = QWidget()
+            radiobutton_widget2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            radiobutton_layout2 = QVBoxLayout()
+            for radio_group_name, radio_group_box in self.radiobuttons_boxes[2].items():
+                radiobutton_layout2.addWidget(radio_group_box)
+
+            radiobutton_layout2.addStretch(1)
+
+            radiobutton_widget2.setLayout(radiobutton_layout2)
+            # Create a scroll area for the radio buttons
+            scroll2 = QScrollArea()
+            scroll2.setWidgetResizable(True)
+            scroll2.setWidget(radiobutton_widget2)
+            scroll2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            scroll2.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            # # Add the scroll area to the page layout
+            self.page2_layout.addWidget(scroll2)
+
+        self.page2_layout.addWidget(QPushButton('Back', clicked=self.show_page1))
+        self.page2.setLayout(self.page2_layout)
+        self.page2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        self.stack.addWidget(self.page1)
+        self.stack.addWidget(self.page2)
+
+        layout.addWidget(self.stack)
+
+        spacer3 = QWidget()
+        spacer3.setMinimumHeight(0)
+        spacer3.setMaximumHeight(10)
+        spacer3.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.addWidget(spacer3)
 
         # Add the Notes textbox
         self.textbox_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -732,17 +877,48 @@ class MainApp(QMainWindow):
         self.textbox_label.setText("NOTES:")
         layout.addWidget(self.textbox_label)
         self.textbox.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
-        self.textbox.setMinimumHeight(150)
+        self.textbox.setMinimumHeight(50)
+        self.textbox.setMaximumHeight(150)
+        self.textbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
         self.connection_manager.connect(self.textbox.textChanged, self.on_text_changed)
         layout.addWidget(self.textbox)
 
+        self.labelling_toolbar.addWidget(layout_widget)
         self.labelling_toolbar.setStyleSheet("QToolBar QLabel { font-weight: bold; }")
+        # scroll_action = QWidgetAction(self)
+        # scroll_action.setDefaultWidget(scroll)
+        # self.labelling_toolbar.addAction(scroll_action)
         self.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.labelling_toolbar)
 
-        scroll_action = QWidgetAction(self)
-        scroll_action.setDefaultWidget(scroll)
-        self.labelling_toolbar.addAction(scroll_action)
-        self.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.labelling_toolbar)
+        self.connection_manager.connect(self.resized, self.sort_toolbar_on_resized)
+        self.resize_timer = QTimer()
+        self.resize_timer.setSingleShot(True)
+        self.connection_manager.connect(self.resize_timer.timeout, self.delayed_visibility_update)
+
+    def sort_toolbar_on_resized(self):
+        toolbar_height = self.labelling_toolbar.sizeHint().height()
+        should_show = toolbar_height * 0.9 <= self.height()
+
+        if self.viewed_icon.isVisible() != should_show:
+            # Restart the timer on every resize event
+            self.resize_timer.start(200)  # Adjust the delay as needed
+
+    def delayed_visibility_update(self):
+        toolbar_height = self.labelling_toolbar.sizeHint().height()
+        should_show = toolbar_height * 0.9 <= self.height()
+
+        if self.viewed_icon.isVisible() != should_show:
+            self.viewed_icon.setVisible(should_show)
+
+    def correct_labelling_toolbar_orientation(self):
+        self.labelling_toolbar.setOrientation(Qt.Orientation.Vertical)
+
+
+    def show_page1(self):
+        self.stack.setCurrentIndex(0)
+
+    def show_page2(self):
+        self.stack.setCurrentIndex(1)
 
     def restore_from_saved_state(self):
         """
@@ -791,13 +967,6 @@ class MainApp(QMainWindow):
         else:
             self.viewed_values[self.file_list[self.current_index]] = "FAILED"
 
-        self.bboxes[self.file_list[self.current_index]] = self.image_view.rect_items.copy()
-        self.rotate_bounding_boxes(
-            self.file_list[self.current_index], self.rotation[self.file_list[self.current_index]],
-            reverse=True
-        )
-        self.image_view.remove_all_bounding_boxes()
-
         # Save current file and index
         self.save_settings()
 
@@ -828,18 +997,17 @@ class MainApp(QMainWindow):
         self.window_center_slider.setValue(127)
         self.window_width_slider.setValue(255)
 
-        self.setWindowTitle(f"Speedy QC - File: {self.file_list[self.current_index]}")
+        self.setWindowTitle(f"Speedy IQA - File: {self.file_list[self.current_index]}")
         self.image_view.zoom = 1
-        self.image_view.fitInView(self.image_view.scene().items()[-1].boundingRect(),
-                                  Qt.AspectRatioMode.KeepAspectRatio)
+        self.reference_view.zoom = 1
 
-        self.rotate_bounding_boxes(
-            self.file_list[self.current_index], self.rotation[self.file_list[self.current_index]]
-        )
-        self.image_view.add_bboxes(self.bboxes.get(self.file_list[self.current_index], {}))
+        self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
+        self.show_page1()
         self.set_checkbox_value()
-        self.set_checked_radiobuttons()
+        self.set_checked_radiobuttons(1)
+        self.set_checked_radiobuttons(2)
 
         self.viewed_label.setText(("" if self.is_image_viewed() else "NOT ") + "PREVIOUSLY VIEWED")
         self.viewed_icon.setPixmap(
@@ -898,11 +1066,11 @@ class MainApp(QMainWindow):
         elif event.key() == Qt.Key.Key_N:
             self.next_image()
         elif event.key() == Qt.Key.Key_Minus or event.key() == Qt.Key.Key_Underscore:
-            self.image_view.zoom_out()
+            self.zoom_out()
         elif event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
-            self.image_view.zoom_in()
+            self.zoom_in()
         elif event.key() == Qt.Key.Key_I:
-            self.invert_grayscale()
+            self.invert_colours()
         elif event.key() == Qt.Key.Key_R:
             self.rotate_image_right()
         elif event.key() == Qt.Key.Key_L:
@@ -967,16 +1135,14 @@ class MainApp(QMainWindow):
         :param selected_file: Path to the file to save to
         :type selected_file: str
         """
-        # Update bboxes for current file
-        self.bboxes[self.file_list[self.current_index]] = self.image_view.rect_items
-
-        data = []
+        data = {
+            'image_directory': self.dir_path,
+            'reference_image_directory': self.reference_dir_path,
+            'files': []
+        }
         for filename in self.file_list:
-
             viewed = self.viewed_values.get(filename, False)
-
             rotation = self.rotation.get(filename, 0)
-
             notes = self.notes.get(filename, "")
 
             cbox_out = {}
@@ -987,26 +1153,16 @@ class MainApp(QMainWindow):
                 else:
                     cbox_out[cbox] = "FAIL"
 
-            bbox_out = {}
-            self.rotate_bounding_boxes(filename, self.rotation.get(filename, 0), reverse=True)
-            for finding, bboxes in self.bboxes[filename].items():
-                for bbox in bboxes:
-                    if finding in bbox_out:
-                        bbox_out[finding].append(bbox.rect().getRect())
-                    else:
-                        bbox_out[finding] = [bbox.rect().getRect()]
-
             radiobuttons_out = {}
             for name, value in self.radiobutton_values[filename].items():
                 radiobuttons_out[name] = value
 
-            data.append({
+            data['files'].append({
                 'filename': filename,
                 'viewed': viewed,
                 'rotation': rotation,
                 'notes': notes,
                 'checkboxes': cbox_out,
-                'bboxes': bbox_out,
                 'radiobuttons': radiobuttons_out,
             })
 
@@ -1028,7 +1184,11 @@ class MainApp(QMainWindow):
             with open(self.json_path, 'r') as file:
                 data = json.load(file)
 
-            for entry in data:
+            self.file_list = [entry['filename'] for entry in data['files']]
+            self.dir_path = data['image_directory']
+            self.reference_dir_path = data['reference_image_directory']
+
+            for entry in data['files']:
                 filename = entry['filename']
                 self.viewed_values[filename] = entry['viewed']
                 self.rotation[filename] = entry['rotation']
@@ -1041,11 +1201,6 @@ class MainApp(QMainWindow):
                         else:
                             self.checkbox_values[filename] = {cbox: value}
 
-                if 'bboxes' in entry:
-                    for finding, coord_sets in entry['bboxes'].items():
-                        for coord_set in coord_sets:
-                            self.load_bounding_box(filename, finding, coord_set)
-
                 if 'radiobuttons' in entry:
                     for name, value in entry['radiobuttons'].items():
                         if filename in self.radiobutton_values:
@@ -1053,26 +1208,6 @@ class MainApp(QMainWindow):
                         else:
                             self.radiobutton_values[filename] = {name: value}
             return True
-
-    def load_bounding_box(self, file: str, finding: str, raw_rect: Tuple[float, float, float, float]):
-        """
-        Loads a bounding box object from the x, y, height, width stored in the JSON file and adds it to the appropriate
-        bboxes dictionary entry.
-
-        :param file: File path of the image associated with the bounding box
-        :type file: str
-        :param finding: The finding type associated with the bounding box
-        :type finding: str
-        :param raw_rect: The (x, y, width, height) values of the bounding box
-        :type raw_rect: Tuple[float, float, float, float]
-        """
-        bbx, bby, bbw, bbh = raw_rect
-        color = self.colors[finding]
-        bbox_item = BoundingBoxItem(QRectF(bbx, bby, bbw, bbh), color)
-        if finding in self.bboxes:
-            self.bboxes[file][finding].append(bbox_item)
-        else:
-            self.bboxes[file][finding] = [bbox_item]
 
     def on_checkbox_changed(self, state: int):
         """
@@ -1086,17 +1221,6 @@ class MainApp(QMainWindow):
         cbox = self.sender().text()
         self.checkbox_values[filename][cbox] = state
         # self.settings.setValue(filename, state)
-
-        if state:
-            self.image_view.setDragMode(QGraphicsView.DragMode.NoDrag)
-            self.image_view.viewport().setCursor(QCursor(Qt.CursorShape.CrossCursor))
-            sender = self.sender()
-            if isinstance(sender, QCheckBox):
-                self.image_view.set_current_finding(cbox, self.colors[cbox])
-        else:
-            self.image_view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-            self.image_view.viewport().setCursor(QCursor(Qt.CursorShape.ArrowCursor))
-            self.image_view.set_current_finding(None, None)
 
     def assign_colors_to_findings(self):
         """
@@ -1150,33 +1274,48 @@ class MainApp(QMainWindow):
         """
         Initializes the menus.
         """
-        # create the file menu
-        file_menu = QMenu("&File", self)
-        menu_save_action = QAction("&Save", self)
-        menu_save_as_action = QAction("&Save As...", self)
-        menu_exit_action = QAction("&Exit", self)
-        file_menu.addAction(menu_save_action)
-        file_menu.addAction(menu_save_as_action)
-        file_menu.addSeparator()
-        file_menu.addAction(menu_exit_action)
+        image_actions = [self.invert_action, self.rotate_left_action, self.rotate_right_action, self.zoom_in_action,
+                         self.zoom_out_action, self.reset_window_action]
+        nav_actions = [self.prevAction, self.nextAction,]
 
         # create the help menu
         help_menu = QMenu("Help", self)
         help_action = QAction("Help", self)
-        about_action = QAction("About", self)
         help_menu.addAction(help_action)
-        help_menu.addAction(about_action)
+        help_menu.addAction(self.logoAction)
+
+        # create the file menu
+        file_menu = QMenu("&File", self)
+        menu_save_as_action = QAction(self.icons['save_as'], "&Save As...", self)
+        file_menu.addAction(self.saveAction)
+        help_menu.addAction(self.saveAction)
+        file_menu.addAction(menu_save_as_action)
+        help_menu.addAction(menu_save_as_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.exitAction)
+        help_menu.addAction(self.exitAction)
+
+        # Create the image menu
+        image_menu = QMenu("&Image", self)
+        for action in image_actions:
+            image_menu.addAction(action)
+            help_menu.addAction(action)
+
+        # Create the navigation menu
+        navigation_menu = QMenu("&Navigation", self)
+        for action in nav_actions:
+            navigation_menu.addAction(action)
+            help_menu.addAction(action)
 
         # add the menus to the menu bar
         menu_bar = QMenuBar(self)
         menu_bar.addMenu(file_menu)
+        menu_bar.addMenu(image_menu)
+        menu_bar.addMenu(navigation_menu)
         menu_bar.addMenu(help_menu)
         self.setMenuBar(menu_bar)
 
-        self.connection_manager.connect(menu_save_action.triggered, self.save_to_json)
         self.connection_manager.connect(menu_save_as_action.triggered, self.save_as)
-        self.connection_manager.connect(menu_exit_action.triggered, self.quit_app)
-        self.connection_manager.connect(about_action.triggered, self.show_about)
 
     def show_about(self):
         """
@@ -1192,4 +1331,5 @@ class MainApp(QMainWindow):
         self.connection_manager.disconnect_all()
         self.about_box.connection_manager.disconnect_all()
         self.image_view.connection_manager.disconnect_all()
+        self.reference_view.connection_manager.disconnect_all()
         QApplication.quit()

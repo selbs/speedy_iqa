@@ -2,34 +2,30 @@ backup_dir: /Users/ianselby/speedy_iqa/backups
 backup_interval: 5
 log_dir: /Users/ianselby/speedy_iqa/logs
 max_backups: 10
-radiobuttons:
+radiobuttons_page1:
 - labels:
-  - Very poor
-  - Poor
-  - Good
-  - Very good
+  - 1
+  - 2
+  - 3
+  - 4
   title: Overall Quality
+radiobuttons_page2:
 - labels:
-  - Underexposed
-  - Good
-  - Overexposed
-  title: Exposure
-- labels:
-  - Very low
-  - Low
-  - Good
-  - High
+  - 1
+  - 2
+  - 3
+  - 4
   title: Contrast
 - labels:
-  - None
-  - Mild
-  - Moderate
-  - Severe
-  title: Blur
+  - 1
+  - 2
+  - 3
+  - 4
+  title: Noise
 - labels:
-  - None
-  - Mild
-  - Moderate
-  - Severe
+  - 1
+  - 2
+  - 3
+  - 4
   title: Artefacts
-tristate_checkboxes: true
+task: General use

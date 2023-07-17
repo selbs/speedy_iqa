@@ -35,7 +35,7 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
 else:
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
-outer_setting = QSettings('SpeedyQC', 'DicomViewer')
+outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
 config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
 config_data = open_yml_file(os.path.join(resource_dir, config_file))
 logger, console_msg = setup_logging(config_data['log_dir'])
@@ -77,29 +77,33 @@ class AboutMessageBox(QDialog):
         left_layout = QVBoxLayout()
 
         # Add the icon to the left side of the message box using a QLabel
-        path = os.path.join(resource_dir, 'assets/3x/white_panel@3x.png')
-        grey_logo = QPixmap(path)
+        path = os.path.join(resource_dir, 'assets/logo.png')
+        grey_logo = QPixmap(path).scaled(320, 320, Qt.AspectRatioMode.KeepAspectRatio)
         icon_label = QLabel()
         icon_label.setPixmap(grey_logo)
         left_layout.addWidget(icon_label)
 
         right_layout = QVBoxLayout()
+        right_layout.addStretch(1)
 
         text_layout = QVBoxLayout()
 
         # Add the app title
-        main_text = QLabel("Speedy QC for Desktop!")
+        main_text = QLabel("Speedy IQA for Desktop!")
         main_text.setStyleSheet("font-weight: bold; font-size: 16px;")
         main_text.setAlignment(Qt.AlignmentFlag.AlignBottom)
         text_layout.addWidget(main_text)
 
         # Add the copyright information
-        sub_text = QLabel("MIT License\nCopyright (c) 2023, Ian Selby")
+        sub_text = QLabel("\nCopyright (c) 2023, Ian Selby, Anna Breger, and Sören Dittmer\n\nMIT License")
+        sub_text.setWordWrap(True)
         sub_text.setStyleSheet("font-size: 14px;")
         sub_text.setAlignment(Qt.AlignmentFlag.AlignTop)
+        sub_text.setFixedWidth(200)
         text_layout.addWidget(sub_text)
 
         right_layout.addLayout(text_layout)
+        right_layout.addStretch(1)
 
         # Create a horizontal layout for buttons
         hbox = QHBoxLayout()
@@ -166,7 +170,7 @@ class LoadMessageBox(QDialog):
     """
     The initial dialog box that appears when the application is launched. This dialog box allows
     the user to select the config file to load into the application and allows them to launch the
-    configuration wizard to customise Speedy QC.
+    configuration wizard to customise Speedy IQA.
 
     :param parent: QWidget or None, the parent widget of this QDialog (default: None).
     :type parent: QWidget or None
@@ -183,7 +187,7 @@ class LoadMessageBox(QDialog):
         self.connection_manager = ConnectionManager()
 
         # Set the window title
-        self.setWindowTitle("Speedy QC for Desktop")
+        self.setWindowTitle("Speedy IQA for Desktop")
 
         # Create a top-level layout
         top_layout = QHBoxLayout()
@@ -191,8 +195,8 @@ class LoadMessageBox(QDialog):
         left_layout = QVBoxLayout()
 
         # path = pkg_resources.resource_filename('speedy_iqa', 'assets/3x/white@3x.png')
-        path = os.path.join(resource_dir, 'assets/3x/white_panel@3x.png')
-        logo = QPixmap(path)
+        path = os.path.join(resource_dir, 'assets/logo.png')
+        logo = QPixmap(path).scaled(320, 320, Qt.AspectRatioMode.KeepAspectRatio)
 
         # Logs a warning if the logo cannot be loaded
         if logo.isNull():
@@ -204,7 +208,7 @@ class LoadMessageBox(QDialog):
         left_layout.addWidget(icon_label)
 
         # Create a QLabel to display the website link
-        web_text = QLabel("<a href='https://github.com/selbs/speedy_qc'>https://github.com/selbs/speedy_qc</a>")
+        web_text = QLabel("<a href='https://github.com/selbs/speedy_iqa'>https://github.com/selbs/speedy_iqa</a>")
         web_text.setTextFormat(Qt.TextFormat.RichText)
         web_text.setAlignment(Qt.AlignmentFlag.AlignRight)
         web_text.setOpenExternalLinks(True)
@@ -221,7 +225,7 @@ class LoadMessageBox(QDialog):
         spacer = QSpacerItem(0, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         # Create a QLabel to display the title of the application
-        main_text = QLabel("Welcome to Speedy QC for Desktop!")
+        main_text = QLabel("Welcome to Speedy IQA for Desktop!")
         main_text.setStyleSheet("font-weight: bold; font-size: 16px;")
         main_text.setAlignment(Qt.AlignmentFlag.AlignBottom)
         right_layout.addWidget(main_text)
@@ -229,7 +233,7 @@ class LoadMessageBox(QDialog):
         right_layout.addItem(spacer)
 
         # Set up QSettings to remember the last config file used
-        self.settings = QSettings('SpeedyQC', 'DicomViewer')
+        self.settings = QSettings('SpeedyIQA', 'ImageViewer')
 
         # Create a QComboBox for selecting the config file
         self.config_combo = QComboBox(self)
@@ -330,7 +334,6 @@ class LoadMessageBox(QDialog):
         :type conf_name: str
         """
         # Save the selected config file to QSettings
-        print(f"Selected config file: {conf_name}")
         self.settings.setValue("last_config_file", os.path.join(resource_dir, conf_name))
 
     def closeEvent(self, event: QCloseEvent):
@@ -346,7 +349,7 @@ class LoadMessageBox(QDialog):
 
 class SetupWindow(QDialog):
     """
-    A QDialog window for setting up Speedy QC for Desktop, including chosing a directory of images to load and
+    A QDialog window for setting up Speedy IQA for Desktop, including chosing a directory of images to load and
     selecting a json file to continue previous labelling.
 
     :param settings: A QSettings object for storing settings
@@ -365,18 +368,22 @@ class SetupWindow(QDialog):
         self.settings = settings
         self.connection_manager = ConnectionManager()
         self.folder_label = QLabel()
+        self.reference_folder_label = QLabel()
         self.json_label = QLabel()
         self.folder_label.setText(self.settings.value("image_path", ""))
+        self.reference_folder_label.setText(self.settings.value("reference_path", ""))
         self.json_label.setText(self.settings.value("json_path", ""))
         self.folder_button = QPushButton("...")
+        self.reference_folder_button = QPushButton("...")
         self.json_button = QPushButton("...")
         self.folder_button.setFixedSize(25, 25)
+        self.reference_folder_button.setFixedSize(25, 25)
         self.json_button.setFixedSize(25, 25)
         self.new_json = False
         self.config = open_yml_file(self.settings.value("last_config_file", os.path.join(resource_dir, "config.yml")))
 
         # Set window title
-        self.setWindowTitle("Speedy QC Setup")
+        self.setWindowTitle("Speedy IQA Setup")
 
         spacer = QSpacerItem(50, 50, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         expanding_spacer = QSpacerItem(10, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -388,9 +395,9 @@ class SetupWindow(QDialog):
         logo_layout = QHBoxLayout()
 
         info_layout = QVBoxLayout()
-        general_info_label = QLabel("Please select the image folder and whether to load progress...")
+        general_info_label = QLabel("Please whether to load progress and if not, select the image folders...")
         general_info_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        general_add_info_label = QLabel("N.B. The previous folder and json file used should be selected by default. ")
+        general_add_info_label = QLabel("N.B. The previous paths used should be loaded automatically. ")
         general_add_info_label.setStyleSheet("font-size: 12px; font-style: italic;")
         info_layout.addWidget(general_info_label)
         info_layout.addWidget(general_add_info_label)
@@ -399,33 +406,13 @@ class SetupWindow(QDialog):
         logo_layout.addItem(spacer)
 
         # path = pkg_resources.resource_filename('speedy_iqa', 'assets/3x/white@3x.png')
-        path = os.path.join(resource_dir, 'assets/2x/white_panel@2x.png')
-        logo = QPixmap(path).scaled(100, 100)
+        path = os.path.join(resource_dir, 'assets/logo.png')
+        logo = QPixmap(path).scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio)
         icon_label = QLabel()
         icon_label.setPixmap(logo)
         logo_layout.addWidget(icon_label)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         layout.addLayout(logo_layout)
-
-        layout.addItem(spacer)
-
-        layout.addSpacerItem(expanding_spacer)
-
-        dcm_layout = QVBoxLayout()
-        dcm_info_label = QLabel("Please select the folder containing the images:")
-        dcm_info_label.setStyleSheet("font-weight: bold;")
-        dcm_layout.addWidget(dcm_info_label)
-
-        dcm_layout.addSpacerItem(fixed_spacer)
-
-        dcm_selection_layout = QHBoxLayout()
-        dcm_selection_layout.addWidget(QLabel("Selected Image Folder:"))
-        dcm_selection_layout.addSpacerItem(expanding_spacer)
-        dcm_selection_layout.addWidget(self.folder_label)
-        dcm_selection_layout.addWidget(self.folder_button)
-        dcm_layout.addLayout(dcm_selection_layout)
-
-        layout.addLayout(dcm_layout)
 
         layout.addItem(spacer)
 
@@ -457,6 +444,35 @@ class SetupWindow(QDialog):
         layout.addItem(spacer)
 
         layout.addSpacerItem(expanding_spacer)
+
+        dcm_layout = QVBoxLayout()
+        dcm_info_label = QLabel("Please select the folders containing the images:")
+        dcm_info_label.setStyleSheet("font-weight: bold;")
+        dcm_layout.addWidget(dcm_info_label)
+
+        dcm_layout.addSpacerItem(fixed_spacer)
+
+        dcm_selection_layout = QHBoxLayout()
+        dcm_selection_layout.addWidget(QLabel("Selected Image Folder:"))
+        dcm_selection_layout.addSpacerItem(expanding_spacer)
+        dcm_selection_layout.addWidget(self.folder_label)
+        dcm_selection_layout.addWidget(self.folder_button)
+        dcm_layout.addLayout(dcm_selection_layout)
+
+        dcm_layout.addSpacerItem(fixed_spacer)
+
+        reference_selection_layout = QHBoxLayout()
+        reference_selection_layout.addWidget(QLabel("Selected Reference Image Folder:"))
+        reference_selection_layout.addSpacerItem(expanding_spacer)
+        reference_selection_layout.addWidget(self.reference_folder_label)
+        reference_selection_layout.addWidget(self.reference_folder_button)
+        dcm_layout.addLayout(reference_selection_layout)
+
+        layout.addLayout(dcm_layout)
+
+        layout.addItem(spacer)
+
+        layout.addSpacerItem(expanding_spacer)
         # Add dialog buttons
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self.connection_manager.connect(self.button_box.accepted, self.on_accepted)
@@ -468,39 +484,57 @@ class SetupWindow(QDialog):
         # Initiate checkbox
         if settings.value('json_path', "") == "":
             # Set tickbox to ticked and inactivate load json button
-            self.new_json_tickbox.setChecked(2)
-            self.json_button.setEnabled(False)
-            self.settings.setValue("new_json", True)
+            self.new_json_tickbox.setChecked(True)
+            # self.json_button.setEnabled(False)
+            # self.folder_button.setEnabled(True)
+            # self.reference_folder_button.setEnabled(True)
+            # self.settings.setValue("new_json", True)
+            # self.json_label.setText(self.settings.value("json_path", ""))
+            # self.folder_label.setText("")
+            # self.reference_folder_label.setText("")
         else:
             # Set tickbox to unticked and activate load json button
-            self.new_json_tickbox.setChecked(0)
-            self.json_button.setEnabled(True)
-            self.settings.setValue("new_json", False)
-
+            self.new_json_tickbox.setChecked(False)
+            # self.json_button.setEnabled(True)
+            # self.folder_button.setEnabled(False)
+            # self.reference_folder_button.setEnabled(False)
+            # self.settings.setValue("new_json", False)
+            # self.json_label.setText("")
+            # self.folder_label.setText(self.settings.value("image_path", ""))
+            # self.reference_folder_label.setText(self.settings.value("reference_path", ""))
 
         # Connect buttons to functions
         self.connection_manager.connect(self.json_button.clicked, self.select_json)
         self.connection_manager.connect(self.folder_button.clicked, self.select_image_folder)
+        self.connection_manager.connect(self.reference_folder_button.clicked, self.select_reference_folder)
         self.connection_manager.connect(self.new_json_tickbox.stateChanged, self.on_json_checkbox_changed)
-
 
         # Load previously selected files
         self.load_saved_files(settings)
+
+        QTimer.singleShot(0, self.on_json_checkbox_changed)
 
     def on_accepted(self):
         """
         Overwrite the default accept method to prevent the dialog from closing if the json file is not compatible.
         """
 
-        if not os.path.isdir(self.folder_label.text()):
+        if not os.path.isdir(self.folder_label.text()) and self.new_json_tickbox.isChecked():
+            print("No image folder selected", self.folder_label.text())
+            print("No image folder selected", self.new_json_tickbox.isChecked())
+            print(not os.path.isdir(self.folder_label.text()) and not self.new_json_tickbox.isChecked())
             self.generate_no_image_msg()
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            return
+        elif not os.path.isdir(self.reference_folder_label.text()) and self.new_json_tickbox.isChecked():
+            self.generate_no_reference_image_msg()
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
         elif self.new_json_tickbox.isChecked():
             super().accept()
         elif not self.check_json_compatibility(self.json_label.text()):
             # Prevent the dialog from closing
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
         else:
             super().accept()
@@ -515,19 +549,29 @@ class SetupWindow(QDialog):
         """
         When the new json checkbox is ticked, disable the json file dialog button and clear the json label.
         """
-        if self.sender().isChecked():
-            self.json_button.setEnabled(True)
+        if self.new_json_tickbox.isChecked():
+            self.json_button.setEnabled(False)
             self.json_label.setText("")
+            self.folder_label.setText(self.settings.value("image_path", ""))
+            self.reference_folder_label.setText(self.settings.value("reference_path", ""))
             self.settings.setValue("new_json", True)
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+            self.folder_button.setEnabled(True)
+            self.reference_folder_button.setEnabled(True)
+
+            if not self.check_json_compatibility(self.json_label.text()):
+                self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            else:
+                self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+
         else:
             self.json_label.setText(self.settings.value("json_path", ""))
+            self.folder_label.setText("")
+            self.reference_folder_label.setText("")
             self.settings.setValue("new_json", False)
             self.json_button.setEnabled(True)
-            if not self.check_json_compatibility(self.json_label.text()):
-                self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-            else:
-                self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.folder_button.setEnabled(False)
+            self.reference_folder_button.setEnabled(False)
 
     def load_saved_files(self, settings: QSettings):
         """
@@ -539,14 +583,18 @@ class SetupWindow(QDialog):
         # Get saved file paths from QSettings
         json_path = settings.value("json_path", "")
         folder_path = settings.value("image_path", "")
+        reference_folder_path = settings.value("reference_path", "")
 
         # Update labels with saved file paths
         if json_path:
             self.json_label.setText(json_path)
         if folder_path:
             self.folder_label.setText(folder_path)
+        if reference_folder_path:
+            self.reference_folder_label.setText(reference_folder_path)
 
-    def save_file_paths(self, settings: str, json_path: str, folder_path: str):
+    @staticmethod
+    def save_file_paths(settings: QSettings, json_path: str, folder_path: str, reference_folder_path: str):
         """
         Update QSettings
 
@@ -560,6 +608,7 @@ class SetupWindow(QDialog):
         # Save file paths to QSettings
         settings.setValue("json_path", json_path)
         settings.setValue("image_path", folder_path)
+        settings.setValue("reference_path", reference_folder_path)
 
     def select_json(self):
         """
@@ -571,8 +620,8 @@ class SetupWindow(QDialog):
         # Update label and save file path
         if json_path:
             self.json_label.setText(json_path)
-            self.save_file_paths(self.settings, json_path, self.folder_label.text())
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.save_file_paths(self.settings, json_path, self.folder_label.text(), self.reference_folder_label.text())
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
     def select_image_folder(self):
         """
@@ -597,9 +646,40 @@ class SetupWindow(QDialog):
                     error_msg_box.exec()
                 else:
                     self.folder_label.setText(folder_path)
-                    self.save_file_paths(self.settings, self.json_label.text(), folder_path)
+                    self.save_file_paths(self.settings, self.json_label.text(), folder_path, self.reference_folder_label.text())
                     image_dir = folder_path
-                    self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+                    self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+                    if not self.new_json_tickbox.isChecked():
+                        self.check_json_compatibility(self.json_label.text())
+            else:
+                break
+
+    def select_reference_folder(self):
+        """
+        Open file dialog to select image folder. Only accept if directory contains an image file.
+        """
+        image_dir = None
+        while image_dir is None:
+            # Open file dialog to select image folder
+            folder_path = QFileDialog.getExistingDirectory(self, "Select Image Folder", self.reference_folder_label.text())
+
+            # Update label and save file path
+            if folder_path:
+                img_files = [f for f in os.listdir(folder_path) if f.endswith((
+                    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
+                ))]
+                if len(img_files) == 0:
+                    error_msg_box = QMessageBox()
+                    error_msg_box.setIcon(QMessageBox.Icon.Warning)
+                    error_msg_box.setWindowTitle("Error")
+                    error_msg_box.setText("The directory does not appear to contain any image files!")
+                    error_msg_box.setInformativeText("Please try again.")
+                    error_msg_box.exec()
+                else:
+                    self.reference_folder_label.setText(folder_path)
+                    self.save_file_paths(self.settings, self.json_label.text(), self.folder_label.text(), folder_path)
+                    image_dir = folder_path
+                    self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
                     if not self.new_json_tickbox.isChecked():
                         self.check_json_compatibility(self.json_label.text())
             else:
@@ -671,6 +751,17 @@ class SetupWindow(QDialog):
                              QMessageBox.StandardButton.Ok,
                              defaultButton=QMessageBox.StandardButton.Ok)
 
+    def generate_no_reference_image_msg(self):
+        """
+        Generate a message box to inform the user that no dcm folder is selected.
+        """
+        QMessageBox.critical(self,
+                             "Error",
+                             f"NO REFERENCE IMAGE DIRECTORY SELECTED!\n\n"
+                             f"Please select a reference image directory or start again and select a new config file. ",
+                             QMessageBox.StandardButton.Ok,
+                             defaultButton=QMessageBox.StandardButton.Ok)
+
     def check_config_json_compatibility(self, cboxes: List[str], cbox_values: List[int], rbs: [str]) -> bool:
         """
         Check if the selected json file is compatible with the config file.
@@ -685,7 +776,8 @@ class SetupWindow(QDialog):
         :rtype: bool
         """
 
-        if not self.config['tristate_checkboxes']:
+        tristate = self.config.get('tristate_checkboxes', False)
+        if not tristate:
             if 1 in cbox_values:
                 self.generate_json_tristate_incompatibility_msg()
                 return False
@@ -695,7 +787,8 @@ class SetupWindow(QDialog):
                 self.generate_json_cbox_incompatibility_msg()
                 return False
 
-        config_rb_names = [group['title'] for group in self.config['radiobuttons']]
+        config_rb_names = [group['title'] for group in self.config['radiobuttons_page1']] + \
+                          [group['title'] for group in self.config['radiobuttons_page2']]
         for rb in rbs:
             if rb not in config_rb_names:
                 self.generate_json_rb_incompatibility_msg()
@@ -716,17 +809,17 @@ class SetupWindow(QDialog):
             imgs = sorted([f for f in os.listdir(self.folder_label.text()) if f.endswith((
                     '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
                 ))])
-
             # Get list of dcms in json
             for file in filenames:
                 if file not in imgs:
                     self.generate_json_image_incompatibility_msg()
                     return False
-
             return True
-        else:
+        elif self.new_json_tickbox.isChecked():
             self.generate_no_image_msg()
             return False
+        else:
+            return True
 
     def check_json_compatibility(self, json_path: str) -> bool:
         """
@@ -739,18 +832,18 @@ class SetupWindow(QDialog):
         :rtype: bool
         """
         if os.path.isfile(json_path):
-            filenames, cboxes, cbox_values, rbs = load_json_filenames_findings(json_path)
+            filenames, cboxes, cbox_values, rbs = self.load_json_filenames_findings(json_path)
             dcm_compatible = self.check_json_image_compatibility(filenames)
             if dcm_compatible:
                 config_compatible = self.check_config_json_compatibility(cboxes, cbox_values, rbs)
                 if config_compatible:
-                    self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+                    self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
                     return True
         elif self.new_json_tickbox.isChecked():
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
             return True
         else:
-            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return False
 
     def closeEvent(self, event: QCloseEvent):
@@ -763,25 +856,28 @@ class SetupWindow(QDialog):
         self.connection_manager.disconnect_all()
         event.accept()
 
+    def load_json_filenames_findings(self, json_path: str):
+        """
+        Load the filenames and findings from a json file.
 
-def load_json_filenames_findings(json_path: str):
-    """
-    Load the filenames and findings from a json file.
+        :param json_path: path to the json file
+        :type json_path: str
+        """
 
-    :param json_path: path to the json file
-    :type json_path: str
-    """
+        with open(json_path, 'r') as file:
+            data = json.load(file)
 
-    with open(json_path, 'r') as file:
-        data = json.load(file)
+        filenames = [entry['filename'] for entry in data['files']]
+        self.folder_label.setText(self.settings.value(data['image_directory'], self.folder_label.text()))
+        self.reference_folder_label.setText(
+            self.settings.value(data['reference_image_directory'], self.reference_folder_label.text())
+        )
+        cboxes = [cbox for entry in data['files'] if 'checkboxes' in entry for cbox in entry['checkboxes'].keys()]
+        cbox_values = [value for entry in data['files'] if 'checkboxes' in entry for value in entry['checkboxes'].values()]
+        radiobs = [rb for entry in data['files'] if 'radiobuttons' in entry for rb in entry['radiobuttons'].keys()]
 
-    filenames = [entry['filename'] for entry in data]
-    cboxes = [cbox for entry in data if 'checkboxes' in entry for cbox in entry['checkboxes'].keys()]
-    cbox_values = [value for entry in data if 'checkboxes' in entry for value in entry['checkboxes'].values()]
-    radiobs = [rb for entry in data if 'radiobuttons' in entry for rb in entry['radiobuttons'].keys()]
+        unique_cboxes = sorted(list(set(cboxes)))
+        unique_cbox_values = sorted(list(set(cbox_values)))
+        unique_radiobs = sorted(list(set(radiobs)))
 
-    unique_cboxes = sorted(list(set(cboxes)))
-    unique_cbox_values = sorted(list(set(cbox_values)))
-    unique_radiobs = sorted(list(set(radiobs)))
-
-    return filenames, unique_cboxes, unique_cbox_values, unique_radiobs
+        return filenames, unique_cboxes, unique_cbox_values, unique_radiobs

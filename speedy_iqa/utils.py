@@ -25,10 +25,11 @@ Functions:
 import logging.config
 import yaml
 import os
-from typing import Dict, Tuple, Any, Optional
+from typing import Dict, Union, Any, Optional, Tuple, List
 from PyQt6.QtCore import *
 import sys
 import numpy as np
+from PIL import Image
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -91,13 +92,19 @@ def create_default_config() -> Dict:
     """
     # Default config...
     default_config = {
-        'checkboxes': ['QC1', 'QC2', 'QC3', 'QC4', 'QC5'],
-        'radiobuttons': [{'title': "Radiobuttons", 'labels': [1, 2, 3, 4]}, ],
+        # 'checkboxes': ['QC1', 'QC2', 'QC3', 'QC4', 'QC5'],
+        'radiobuttons_page1': [{'title': "Overall Quality", 'labels': [1, 2, 3, 4]}, ],
+        'radiobuttons_page2': [
+            {'title': "Contrast", 'labels': [1, 2, 3, 4]},
+            {'title': "Noise", 'labels': [1, 2, 3, 4]},
+            {'title': "Artefacts", 'labels': [1, 2, 3, 4]},
+        ],
         'max_backups': 10,
-        'backup_dir': os.path.expanduser('~/speedy_qc/backups'),
-        'log_dir': os.path.expanduser('~/speedy_qc/logs'),
-        'tristate_checkboxes': True,
+        'backup_dir': os.path.expanduser('~/speedy_iqa/backups'),
+        'log_dir': os.path.expanduser('~/speedy_iqa/logs'),
+        # 'tristate_checkboxes': True,
         'backup_interval': 5,
+        'task': 'General use',
     }
 
     save_path = os.path.join(resource_dir, 'config.yml')
@@ -220,3 +227,29 @@ def convert_to_checkstate(value: int) -> Qt.CheckState:
     else:
         # Handle invalid values or default case
         return Qt.CheckState.Unchecked
+
+
+def create_icns(
+        png_path: str,
+        icns_path: str,
+        sizes: Optional[Union[Tuple[int], List[int]]] = (16, 32, 64, 128, 256, 512, 1024)
+):
+    img = Image.open(png_path)
+    icon_sizes = []
+
+    for size in sizes:
+        # Resize while maintaining aspect ratio (thumbnail method maintains aspect ratio)
+        copy = img.copy()
+        copy.thumbnail((size, size))
+
+        # Create new image and paste the resized image into it, centering it
+        new_image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        new_image.paste(copy, ((size - copy.width) // 2, (size - copy.height) // 2))
+
+        icon_sizes.append(new_image)
+
+    if icns_path.endswith('.icns'):
+        icns_path = icns_path[:-5]
+
+    # Save the images as .icns
+    icon_sizes[0].save(f'{icns_path}.icns', format='ICNS', append_images=icon_sizes[1:])

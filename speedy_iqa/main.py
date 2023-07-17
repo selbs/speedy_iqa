@@ -1,7 +1,7 @@
 """
 main.py
 
-Main module for Speedy QC, a DICOM viewer for desktop which allows image labeling and the drawing of bounding boxes.
+Main module for Speedy IQA, a DICOM viewer for desktop which allows image labeling and the drawing of bounding boxes.
 
 This module initializes the application, sets the theme and icon styles, and displays the main window or
 configuration wizard based on user input.
@@ -11,7 +11,7 @@ Functions:
     load_dicom_dialog() -> str: Prompts the user to select a directory containing DICOM files.
 
 Usage:
-    Run this module as a script to start the Speedy QC application:
+    Run this module as a script to start the Speedy IQA application:
         - From the command line (if installed by pip):
             `speedy_iqa`
         - From python:
@@ -117,7 +117,7 @@ def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawes
     print("main", config_file)
     load_msg_box.save_last_config(config_file)
 
-    settings = QSettings('SpeedyQC', 'DicomViewer')
+    settings = QSettings('SpeedyIQA', 'ImageViewer')
 
     # User selects to `Ok` -> load the load dialog box
     if result == load_msg_box.DialogCode.Accepted:

@@ -1,7 +1,7 @@
 """
 wizard.py
 
-This module provides a configuration wizard for the Speedy QC application, allowing users
+This module provides a configuration wizard for the Speedy IQA application, allowing users
 to customize various settings such as checkbox labels, maximum number of backup files,
 and directories for backup and log files. The wizard can be run from the initial dialog
 box of the application, from the command line, or from Python.
@@ -41,7 +41,7 @@ class RadioButtonPage(QWizardPage):
     :param parent: The parent widget.
     :type parent: QWidget
     """
-    def __init__(self, parent=None):
+    def __init__(self, page_no=1, parent=None):
         """
         Initializes the page.
 
@@ -52,8 +52,8 @@ class RadioButtonPage(QWizardPage):
 
         self.connection_manager = ConnectionManager()
 
-        self.setTitle("Radio Button Page")
-        self.setSubTitle("\nPlease specify the radio button groups you want to add...\n")
+        self.setTitle(f"Radio Button Page {page_no}")
+        self.setSubTitle(f"\nPlease specify the radio button groups you want to add to page {page_no}...\n")
 
         self.layout = QVBoxLayout(self)
 
@@ -236,7 +236,7 @@ class RadioButtonGroupDialog(QDialog):
 
 class ConfigurationWizard(QWizard):
     """
-    A QWizard implementation for customizing the configuration of the Speedy QC application.
+    A QWizard implementation for customizing the configuration of the Speedy IQA application.
     Allows users to customize checkbox labels, maximum number of backup files, and directories
     for backup and log files. Can be run from the initial dialog box, from the command line,
     or from Python.
@@ -263,8 +263,11 @@ class ConfigurationWizard(QWizard):
         :type config_path: str
         """
         super().__init__()
-        self.settings = QSettings('SpeedyQC', 'DicomViewer')
+        self.settings = QSettings('SpeedyIQA', 'ImageViewer')
         self.connection_manager = ConnectionManager()
+        self.nradio_pages = 2
+        self.radio_pages = {}
+        self.radio_buttons = {}
 
         self.setStyleSheet(f"""
             QLineEdit {{
@@ -289,39 +292,54 @@ class ConfigurationWizard(QWizard):
 
         # Set the logo pixmap
 
-        icon_path = os.path.join(resource_dir, 'assets/3x/white_panel@3x.png')
+        icon_path = os.path.join(resource_dir, 'assets/logo.png')
         pixmap = QPixmap(icon_path)
         self.setPixmap(QWizard.WizardPixmap.LogoPixmap, pixmap.scaled(320, 320, Qt.AspectRatioMode.KeepAspectRatio))
 
         # Load the config file
         self.config_data = open_yml_file(self.config_path)
-        self.checkboxes = self.config_data.get('checkboxes', [])
-        self.radio_buttons = self.config_data.get('radiobuttons', [])
+        # self.checkboxes = self.config_data.get('checkboxes', [])
+        for i in range(self.nradio_pages):
+            self.radio_buttons[i] = self.config_data.get(f'radiobuttons_page{i+1}', [])
+        if self.nradio_pages >= 2:
+            if not self.radio_buttons[0]:
+                self.radio_buttons[0] = [{'title': "Overall Quality", 'labels': [1, 2, 3, 4]}, ]
+            if not self.radio_buttons[1]:
+                self.radio_buttons[1] = [
+                    {'title': "Contrast", 'labels': [1, 2, 3, 4]},
+                    {'title': "Noise", 'labels': [1, 2, 3, 4]},
+                    {'title': "Artefacts", 'labels': [1, 2, 3, 4]},
+                ]
         self.max_backups = self.config_data.get('max_backups', 10)
         self.backup_interval = self.config_data.get('backup_interval', 5)
-        self.backup_dir = self.config_data.get('backup_dir', os.path.expanduser('~/speedy_qc/backups'))
-        self.log_dir = self.config_data.get('log_dir', os.path.expanduser('~/speedy_qc/logs'))
-        self.tristate_checkboxes = bool(self.config_data.get('tristate_checkboxes', False))
+        self.backup_dir = self.config_data.get('backup_dir', os.path.expanduser('~/speedy_iqa/backups'))
+        self.log_dir = self.config_data.get('log_dir', os.path.expanduser('~/speedy_iqa/logs'))
+        self.task = self.config_data.get('task', 'General use')
+        # self.tristate_checkboxes = bool(self.config_data.get('tristate_checkboxes', False))
 
-        self.input_option_checkboxes = {}
+        # self.input_option_checkboxes = {}
         # Create pages for the wizard
-        self.options_page = self.create_options_page()
-        self.label_page = self.create_label_page()
-        self.radio_page = self.create_radio_page()
+        # self.options_page = self.create_options_page()
+        # self.label_page = self.create_label_page()
+        for i in range(self.nradio_pages):
+            self.radio_pages[i] = self.create_radio_page(i+1)
         self.backup_page = self.create_backup_page()
         self.save_page = self.create_save_page()
 
-        self.radio_page.load_group_data(self.radio_buttons)
+        # Load the data into the pages
+        for i in range(self.nradio_pages):
+            self.radio_pages[i].load_group_data(self.radio_buttons[i])
 
         # Set up the wizard
-        self.addPage(self.options_page)
-        self.addPage(self.label_page)
-        self.addPage(self.radio_page)
+        # self.addPage(self.options_page)
+        # self.addPage(self.label_page)
+        for i in range(self.nradio_pages):
+            self.addPage(self.radio_pages[i])
         self.addPage(self.backup_page)
         self.addPage(self.save_page)
 
         # Set the window title and modality
-        self.setWindowTitle("Speedy QC Configuration Wizard")
+        self.setWindowTitle("Speedy IQA Configuration Wizard")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
         # Set the size of the wizard to allow for list of checkboxes to fit nicely
@@ -331,156 +349,156 @@ class ConfigurationWizard(QWizard):
         next_button = self.button(QWizard.NextButton)
         next_button.setDefault(True)
 
-    def create_options_page(self):
-        """
-        Creates the first page of the wizard, allowing users to select which types of input
-        they want to use (checkboxes, radio buttons, or both).
+    # def create_options_page(self):
+    #     """
+    #     Creates the first page of the wizard, allowing users to select which types of input
+    #     they want to use (checkboxes, radio buttons, or both).
+    #
+    #     :return: The first page of the wizard.
+    #     :rtype: QWizardPage
+    #     """
+    #     page = QWizardPage()
+    #     page.setTitle("Checkbox Page")
+    #     page.setSubTitle("\nPlease select which types of input you want to use...\n")
+    #
+    #     layout = QVBoxLayout(page)
+    #     for input_type in ["Checkbox", "Radio Buttons"]:
+    #         cbox = QCheckBox(input_type)
+    #         layout.addWidget(cbox)
+    #         self.input_option_checkboxes[input_type] = cbox
+    #         layout.addWidget(cbox)
+    #
+    #     self.input_option_checkboxes["Checkbox"].setChecked(bool(self.checkboxes))
+    #     self.input_option_checkboxes["Radio Buttons"].setChecked(bool(self.radio_buttons))
+    #
+    #     layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+    #     layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+    #
+    #     return page
 
-        :return: The first page of the wizard.
-        :rtype: QWizardPage
-        """
-        page = QWizardPage()
-        page.setTitle("Checkbox Page")
-        page.setSubTitle("\nPlease select which types of input you want to use...\n")
+    # def nextId(self) -> int:
+    #     """
+    #     This method is used to control the order of the pages.
+    #
+    #     :return: The ID of the next page to go to.
+    #     :rtype: int
+    #     """
+    #     cboxes = bool(self.input_option_checkboxes["Checkbox"].isChecked())
+    #     radio = bool(self.input_option_checkboxes["Radio Buttons"].isChecked())
+    #
+    #     current_id = self.currentId()
+    #     if current_id == 0:  # If we are on the options page...
+    #         if cboxes and not radio:
+    #             return 1  # Go to the checkboxes page
+    #         elif not cboxes and radio:
+    #             return 2  # Go to the radio buttons page
+    #         elif cboxes and radio:
+    #             return 1  # Go to the checkboxes page first
+    #         else:  # If both checkboxes are not checked...
+    #             return 0  # Go back to the options page
+    #
+    #     elif current_id == 1:  # If we are on the checkboxes page...
+    #         if radio:
+    #             return 2  # Go to the radio buttons page
+    #         else:
+    #             return 3  # Skip to the backup page
+    #
+    #     # If we are not on the first or second page, let QWizard handle the page order normally.
+    #     else:
+    #         return super().nextId()
 
-        layout = QVBoxLayout(page)
-        for input_type in ["Checkbox", "Radio Buttons"]:
-            cbox = QCheckBox(input_type)
-            layout.addWidget(cbox)
-            self.input_option_checkboxes[input_type] = cbox
-            layout.addWidget(cbox)
+    # def create_label_page(self):
+    #     """
+    #     Creates the page of the wizard that allows users to name the checkboxes.
+    #
+    #     :return: The page of the wizard that allows users to name the checkboxes.
+    #     :rtype: QWizardPage
+    #     """
+    #     page = QWizardPage()
+    #     page.setTitle("Checkbox Labels")
+    #     page.setSubTitle("\nPlease name the checkboxes to label the images...\n")
+    #
+    #     layout = QVBoxLayout(page)
+    #
+    #     cbox_layout = QHBoxLayout()
+    #     self.tristate_checkbox = QCheckBox("Use tri-state checkboxes, i.e. have third uncertain option")
+    #     self.tristate_checkbox.setChecked(bool(self.config_data.get('tristate_checkboxes', False)))
+    #     self.connection_manager.connect(self.tristate_checkbox.stateChanged, self.update_tristate_checkboxes_state)
+    #     cbox_layout.addWidget(self.tristate_checkbox)
+    #     cbox_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+    #     cbox_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+    #     layout.addLayout(cbox_layout)
+    #
+    #     self.labels_widget = QWidget(page)
+    #     self.labels_layout = QVBoxLayout(self.labels_widget)
+    #     self.labels_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # Align to the top
+    #
+    #     for label in self.checkboxes:
+    #         self.add_label(label)
+    #
+    #     self.add_label_button = QPushButton("Add Label")
+    #     self.connection_manager.connect(self.add_label_button.clicked, lambda: self.add_label())
+    #
+    #     # Create a QScrollArea
+    #     self.scroll_area = QScrollArea()
+    #     self.scroll_area.setWidgetResizable(True)  # The contents will resize to fill the scroll area
+    #     self.scroll_area.setWidget(self.labels_widget)
+    #
+    #     layout.addWidget(self.scroll_area)
+    #     layout.addWidget(self.add_label_button)
+    #
+    #     return page
 
-        self.input_option_checkboxes["Checkbox"].setChecked(bool(self.checkboxes))
-        self.input_option_checkboxes["Radio Buttons"].setChecked(bool(self.radio_buttons))
-
-        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-        return page
-
-    def nextId(self) -> int:
-        """
-        This method is used to control the order of the pages.
-
-        :return: The ID of the next page to go to.
-        :rtype: int
-        """
-        cboxes = bool(self.input_option_checkboxes["Checkbox"].isChecked())
-        radio = bool(self.input_option_checkboxes["Radio Buttons"].isChecked())
-
-        current_id = self.currentId()
-        if current_id == 0:  # If we are on the options page...
-            if cboxes and not radio:
-                return 1  # Go to the checkboxes page
-            elif not cboxes and radio:
-                return 2  # Go to the radio buttons page
-            elif cboxes and radio:
-                return 1  # Go to the checkboxes page first
-            else:  # If both checkboxes are not checked...
-                return 0  # Go back to the options page
-
-        elif current_id == 1:  # If we are on the checkboxes page...
-            if radio:
-                return 2  # Go to the radio buttons page
-            else:
-                return 3  # Skip to the backup page
-
-        # If we are not on the first or second page, let QWizard handle the page order normally.
-        else:
-            return super().nextId()
-
-    def create_label_page(self):
-        """
-        Creates the page of the wizard that allows users to name the checkboxes.
-
-        :return: The page of the wizard that allows users to name the checkboxes.
-        :rtype: QWizardPage
-        """
-        page = QWizardPage()
-        page.setTitle("Checkbox Labels")
-        page.setSubTitle("\nPlease name the checkboxes to label the images...\n")
-
-        layout = QVBoxLayout(page)
-
-        cbox_layout = QHBoxLayout()
-        self.tristate_checkbox = QCheckBox("Use tri-state checkboxes, i.e. have third uncertain option")
-        self.tristate_checkbox.setChecked(bool(self.config_data.get('tristate_checkboxes', False)))
-        self.connection_manager.connect(self.tristate_checkbox.stateChanged, self.update_tristate_checkboxes_state)
-        cbox_layout.addWidget(self.tristate_checkbox)
-        cbox_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        cbox_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        layout.addLayout(cbox_layout)
-
-        self.labels_widget = QWidget(page)
-        self.labels_layout = QVBoxLayout(self.labels_widget)
-        self.labels_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # Align to the top
-
-        for label in self.checkboxes:
-            self.add_label(label)
-
-        self.add_label_button = QPushButton("Add Label")
-        self.connection_manager.connect(self.add_label_button.clicked, lambda: self.add_label())
-
-        # Create a QScrollArea
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)  # The contents will resize to fill the scroll area
-        self.scroll_area.setWidget(self.labels_widget)
-
-        layout.addWidget(self.scroll_area)
-        layout.addWidget(self.add_label_button)
-
-        return page
-
-    def add_label(self, label_text=""):
-        """
-        Adds a label to the list of labels.
-        """
-        line_edit = QLineEdit(label_text)
-        remove_button = QPushButton("Remove")
-        remove_button.setFixedSize(100, 40)
-
-        self.connection_manager.connect(remove_button.clicked, lambda: self.remove_label(line_edit, remove_button))
-
-        # Create a horizontal layout for the line edit and the remove button
-        hbox = QHBoxLayout()
-        hbox.addWidget(line_edit)
-        hbox.addWidget(remove_button)
-        self.labels_layout.addLayout(hbox)
-
-    def remove_label(self, line_edit, button):
-        """
-        Removes a label from the list of labels.
-        """
-        # Get the layout that contains the line edit and the button
-        hbox = line_edit.parent().layout()
-
-        # Remove the line edit and the button from the layout
-        hbox.removeWidget(line_edit)
-        hbox.removeWidget(button)
-
-        # Delete the line edit and the button
-        line_edit.deleteLater()
-        button.deleteLater()
+    # def add_label(self, label_text=""):
+    #     """
+    #     Adds a label to the list of labels.
+    #     """
+    #     line_edit = QLineEdit(label_text)
+    #     remove_button = QPushButton("Remove")
+    #     remove_button.setFixedSize(100, 40)
+    #
+    #     self.connection_manager.connect(remove_button.clicked, lambda: self.remove_label(line_edit, remove_button))
+    #
+    #     # Create a horizontal layout for the line edit and the remove button
+    #     hbox = QHBoxLayout()
+    #     hbox.addWidget(line_edit)
+    #     hbox.addWidget(remove_button)
+    #     self.labels_layout.addLayout(hbox)
+    #
+    # def remove_label(self, line_edit, button):
+    #     """
+    #     Removes a label from the list of labels.
+    #     """
+    #     # Get the layout that contains the line edit and the button
+    #     hbox = line_edit.parent().layout()
+    #
+    #     # Remove the line edit and the button from the layout
+    #     hbox.removeWidget(line_edit)
+    #     hbox.removeWidget(button)
+    #
+    #     # Delete the line edit and the button
+    #     line_edit.deleteLater()
+    #     button.deleteLater()
 
     @staticmethod
-    def create_radio_page() -> QWizardPage:
+    def create_radio_page(page_no) -> QWizardPage:
         """
         Creates the page of the wizard that allows users to name the radio buttons.
 
         :return: The page of the wizard that allows users to name the radio buttons.
         :rtype: QWizardPage
         """
-        page = RadioButtonPage()
+        page = RadioButtonPage(page_no)
         return page
 
-    def update_tristate_checkboxes_state(self, state):
-        """
-        Updates the state of the tristate_checkboxes option in the config file.
-
-        :param state: The state of the tristate_checkboxes option.
-        :type state: int
-        """
-        self.tristate_checkboxes = bool(state)
+    # def update_tristate_checkboxes_state(self, state):
+    #     """
+    #     Updates the state of the tristate_checkboxes option in the config file.
+    #
+    #     :param state: The state of the tristate_checkboxes option.
+    #     :type state: int
+    #     """
+    #     self.tristate_checkboxes = bool(state)
 
     def create_backup_page(self) -> QWizardPage:
         """
@@ -493,19 +511,28 @@ class ConfigurationWizard(QWizard):
         """
 
         page = QWizardPage()
-        page.setTitle("Logging and Backup Files")
-        page.setSubTitle("\nPlease choose where logs and backups should be stored, and\n"
-                         "specify maximum number of backup files...\n")
+        page.setTitle("Select Task, Logging File and Backup Settings")
+        page.setSubTitle("\nPlease state the task that the images would be utilised for and \n"
+                         "choose the settings for the log file and backups...\n")
 
         # Create a vertical layout for the page
         layout = QVBoxLayout(page)
 
-
         self.backup_widget = QWidget(page)
         self.backup_layout = QVBoxLayout(self.backup_widget)
 
+        # Add task entry
+        task_label = QLabel("Task images are being assessed for:")
+        self.task_edit = QLineEdit()
+        self.task_edit.setText(self.settings.value("task", self.task))
+        self.backup_layout.addWidget(task_label)
+        self.backup_layout.addWidget(self.task_edit)
+
+        spacer = QSpacerItem(0, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.backup_layout.addItem(spacer)
+
         # Create a widget for the log directory
-        log_dir_label = QLabel("Log Directory:")
+        log_dir_label = QLabel("Log directory:")
         self.log_dir_edit = QLineEdit()
         self.log_dir_edit.setText(self.settings.value("log_dir", os.path.expanduser(self.log_dir)))
         self.backup_layout.addWidget(log_dir_label)
@@ -514,7 +541,7 @@ class ConfigurationWizard(QWizard):
         spacer = QSpacerItem(0, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.backup_layout.addItem(spacer)
 
-        backup_dir_label = QLabel("Backup Directory:")
+        backup_dir_label = QLabel("Backup directory:")
         self.backup_dir_edit = QLineEdit()
         self.backup_dir_edit.setText(self.settings.value("backup_dir", os.path.expanduser(self.backup_dir)))
         self.backup_layout.addWidget(backup_dir_label)
@@ -525,14 +552,14 @@ class ConfigurationWizard(QWizard):
         self.backup_spinbox.setRange(1, 100)
         self.backup_spinbox.setValue(self.max_backups)
 
-        self.backup_layout.addWidget(QLabel("Maximum Number of Backups:"))
+        self.backup_layout.addWidget(QLabel("Maximum number of backups:"))
         self.backup_layout.addWidget(self.backup_spinbox)
 
         self.backup_int_spinbox = QSpinBox()
         self.backup_int_spinbox.setRange(1, 30)
         self.backup_int_spinbox.setValue(self.backup_interval)
 
-        self.backup_layout.addWidget(QLabel("Backup Interval (mins):"))
+        self.backup_layout.addWidget(QLabel("Backup interval (mins):"))
         self.backup_layout.addWidget(self.backup_int_spinbox)
 
         layout.addWidget(self.backup_widget)
@@ -613,30 +640,29 @@ class ConfigurationWizard(QWizard):
         if not filename.endswith('.yml'):
             filename += '.yml'
 
-        if bool(self.input_option_checkboxes["Checkbox"].isChecked()):
-            # Save the updated config data
-            # Save the updated config data
-            new_checkbox_labels = []
-            for i in range(self.labels_layout.count()):
-                hbox = self.labels_layout.itemAt(i).layout()  # Get the QHBoxLayout
-                if hbox is not None:
-                    line_edit = hbox.itemAt(0).widget()  # Get the QLineEdit from the QHBoxLayout
-                    if line_edit.text():
-                        new_checkbox_labels.append(line_edit.text())
-            self.config_data['checkboxes'] = new_checkbox_labels
-        else:
-            self.config_data['checkboxes'] = []
+        # if bool(self.input_option_checkboxes["Checkbox"].isChecked()):
+        #     # Save the updated config data
+        #     # Save the updated config data
+        #     new_checkbox_labels = []
+        #     for i in range(self.labels_layout.count()):
+        #         hbox = self.labels_layout.itemAt(i).layout()  # Get the QHBoxLayout
+        #         if hbox is not None:
+        #             line_edit = hbox.itemAt(0).widget()  # Get the QLineEdit from the QHBoxLayout
+        #             if line_edit.text():
+        #                 new_checkbox_labels.append(line_edit.text())
+        #     self.config_data['checkboxes'] = new_checkbox_labels
+        # else:
+        #     self.config_data['checkboxes'] = []
 
-        if bool(self.input_option_checkboxes["Radio Buttons"].isChecked()):
-            self.config_data['radiobuttons'] = self.radio_page.get_group_data()
-        else:
-            self.config_data['radiobuttons'] = []
+        for i in range(self.nradio_pages):
+            self.config_data[f'radiobuttons_page{i+1}'] = self.radio_pages[i].get_group_data()
 
-        self.config_data['tristate_checkboxes'] = self.tristate_checkboxes
+        # self.config_data['tristate_checkboxes'] = self.tristate_checkboxes
         self.config_data['max_backups'] = self.backup_spinbox.value()
         self.config_data['backup_interval'] = self.backup_int_spinbox.value()
         self.config_data['backup_dir'] = self.backup_dir_edit.text()
         self.config_data['log_dir'] = self.log_dir_edit.text()
+        self.config_data['task'] = self.task_edit.text()
 
         save_path = os.path.join(resource_dir, filename)
 
@@ -664,7 +690,7 @@ if __name__ == '__main__':
     default_dir = resource_dir
 
     # Load the last config file used
-    settings = QSettings('SpeedyQC', 'DicomViewer')
+    settings = QSettings('SpeedyIQA', 'ImageViewer')
     config_file = settings.value('config_file', os.path.join(default_dir, 'config.yml'))
 
     # Create the configuration wizard

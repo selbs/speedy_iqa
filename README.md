@@ -1,16 +1,16 @@
 Speedy IQA for Desktop <img src="speedy_iqa/assets/logo.png" alt="App Logo" width="200" style="float: right;">
 =====================
 
-Speedy IQA is an image viewer and customisable labeller for image quality assessment (IQA). The program may be
-used to quickly check the quality of the images against a reference image and/or to label them with the required ground 
-truth for training an IQA model.
+Speedy IQA is an image viewer and labeller for image quality assessment (IQA). The program may be
+used to quickly check the quality of the images against a reference image and to label them with the required ground 
+truth for developing an IQA model.
 
 The program may be run from the command line or as an executable, which can be downloaded or 
 created from the source code.
 
-Primarily for use on Mac OS X, but should work on Linux and Windows.
+Primarily developed for use on Mac OS X, but should work on Linux and Windows.
 
-![Screenshot](https://github.com/selbs/speedy_iqa/blob/master/speedy_iqa/assets/screenshot.png)
+![Screenshot](speedy_iqa/assets/screenshot.png)
 
 > **Warning:** Please note that this application is still in development and there may be unresolved bugs and issues. 
 > Use at your own risk!
@@ -39,8 +39,8 @@ Install the package using pip:
 pip install git+https://github.com/selbs/speedy_iqa
 ```
 
-It is recommended to install the package in a Python 3.10 virtual environment as it was this
-version of python used in development. However, other versions of Python 3 should still work.
+It is recommended to install the package in a Python 3.10 virtual environment as this
+version of python was used in development. However, other versions of Python 3 should still work.
 
 You can also clone the package from GitHub and install it manually:
 
