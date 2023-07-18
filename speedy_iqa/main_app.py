@@ -702,7 +702,6 @@ class MainApp(QMainWindow):
         :param file_extension: The extension of the image file
         :type file_extension: str
         """
-        image = None
         if file_extension == ".dcm":
             # Read the DICOM file
             ds = pydicom.dcmread(file_path)
@@ -710,16 +709,17 @@ class MainApp(QMainWindow):
             image = apply_modality_lut(image, ds)
             image = apply_voi_lut(image.astype(int), ds, 0)
             # Convert the pixel array to an 8-bit integer array
-            if ds.BitsStored != 8:
-                _min = np.amin(image)
-                _max = np.amax(image)
-                image = (image - _min) * 255.0 / (_max - _min)
-                image = np.uint8(image)
+            #############################
+            # TODO: Check if we want this
+            image = bytescale(image)
+            #############################
         else:
             # Read the image file
-            raw_image = iio.imread(file_path)
-            if raw_image.dtype == np.uint8:
-                image = bytescale(raw_image)
+            image = iio.imread(file_path)
+            #############################
+            # TODO: Check if we want this
+            image = bytescale(image)
+            #############################
         return image
 
     def load_image(self):
