@@ -83,7 +83,7 @@ class RadioButtonPage(QWizardPage):
         Adds a radio button group to the page.
         """
         dialog = RadioButtonGroupDialog(self)
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             group = QGroupBox(dialog.title)
             layout = QGridLayout()  # Use QGridLayout for multiple columns
 
@@ -208,7 +208,7 @@ class RadioButtonGroupDialog(QDialog):
         self.labelsInput = QTextEdit(self)
         self.labelsInput.setPlaceholderText("Enter one label per line")
 
-        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        self.buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
         self.connection_manager.connect(self.buttons.accepted, self.accept)
         self.connection_manager.connect(self.buttons.rejected, self.reject)
 

@@ -20,14 +20,14 @@ import qtawesome as qta
 from PyQt6.QtCore import QTimer
 import datetime
 import json
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import matplotlib.pyplot as plt
 import sys
 from math import ceil
 import imageio as iio
 from functools import partial
 
-from speedy_iqa.windows import AboutMessageBox
+from speedy_iqa.windows import AboutMessageBox, FileSelectionDialog
 from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale, convert_to_checkstate
 from speedy_iqa.graphics import CustomGraphicsView
 
@@ -141,7 +141,7 @@ class MainApp(QMainWindow):
             'save_as': qta.icon("mdi.content-save-edit"),
             'next': qta.icon("mdi.arrow-right-circle"),
             'prev': qta.icon("mdi.arrow-left-circle"),
-
+            'goto': qta.icon("mdi.file-find"),
             'ww': qta.icon("mdi.contrast-box"),
             'wc': qta.icon("mdi.brightness-5"),
 
@@ -310,17 +310,23 @@ class MainApp(QMainWindow):
         self.nav_toolbar.addSeparator()
         # Add buttons to the navigator toolbar to navigate to previous and next image
         self.prevAction = QAction(self.icons['prev'], "&Back", self)
+        self.goToAction = QAction(self.icons['goto'], "&Go To Image...", self)
         self.nextAction = QAction(self.icons['next'], "&Next", self)
-        action_width = self.labelling_toolbar.sizeHint().width() / 2
+        action_width = self.labelling_toolbar.sizeHint().width() / 3
 
         self.prevButton = QToolButton()
         self.prevButton.setDefaultAction(self.prevAction)
-        self.prevButton.setFixedWidth(action_width)  # Set width to 100px
+        self.prevButton.setFixedWidth(action_width)
         self.nav_toolbar.addWidget(self.prevButton)
+
+        self.goToButton = QToolButton()
+        self.goToButton.setDefaultAction(self.goToAction)
+        self.goToButton.setFixedWidth(action_width)
+        self.nav_toolbar.addWidget(self.goToButton)
 
         self.nextButton = QToolButton()
         self.nextButton.setDefaultAction(self.nextAction)
-        self.nextButton.setFixedWidth(action_width)  # Set width to 200px
+        self.nextButton.setFixedWidth(action_width)
         self.nav_toolbar.addWidget(self.nextButton)
 
         self.nav_toolbar.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -387,6 +393,7 @@ class MainApp(QMainWindow):
         self.connection_manager.connect(self.nextAction.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.prevAction.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.prevAction.triggered, self.previous_image)
+        self.connection_manager.connect(self.goToAction.triggered, self.go_to_image)
         self.connection_manager.connect(self.nextAction.triggered, self.next_image)
         self.connection_manager.connect(self.saveAction.triggered, self.save_to_json)
         self.connection_manager.connect(self.exitAction.triggered, self.quit_app)
@@ -402,19 +409,48 @@ class MainApp(QMainWindow):
         self.connection_manager.connect(self.reference_view.verticalScrollBar().valueChanged,
                                         self.sync_vertical_scrollbars)
 
+    def go_to_image(self):
+        """
+        Open a dialog to go to a specific image
+        """
+        dialog = FileSelectionDialog(self.file_list, self)
+        result = dialog.exec()
+        if result == QDialog.DialogCode.Accepted:
+            self.reset_window_sliders()
+            index = self.file_list.index(dialog.selected_file)
+            self.change_image("go_to", index)
+
     def sync_horizontal_scrollbars(self, value):
+        """
+        Sync the horizontal scrollbars of the image and reference views
+
+        :param value: the value of the scrollbar
+        :type value: int
+        """
         self.image_view.horizontalScrollBar().setValue(value)
         self.reference_view.horizontalScrollBar().setValue(value)
 
     def sync_vertical_scrollbars(self, value):
+        """
+        Sync the vertical scrollbars of the image and reference views
+
+        :param value: the value of the scrollbar
+        :type value: int
+        """
         self.image_view.verticalScrollBar().setValue(value)
         self.reference_view.verticalScrollBar().setValue(value)
 
     def zoom_in(self):
+        """
+        Zoom in on the image and reference views
+        """
         self.image_view.zoom_in()
         self.reference_view.zoom_in()
 
     def zoom_out(self):
+        """
+        Zoom out on the image and reference views
+        """
         self.image_view.zoom_out()
         self.reference_view.zoom_out()
 
@@ -585,7 +621,10 @@ class MainApp(QMainWindow):
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
 
-        reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+        if self.reference_delimiter:
+            reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+        else:
+            reference_name = os.path.splitext(self.file_list[self.current_index])[0]
         reference_name = reference_name + img_extension
         reference_path = os.path.join(self.reference_dir_path, reference_name)
 
@@ -600,7 +639,15 @@ class MainApp(QMainWindow):
             logger.exception(f"Failed to load file: {img_path} - Message: {str(e)}")
 
     @staticmethod
-    def read_file(file_path, file_extension):
+    def read_file(file_path: str, file_extension: str):
+        """
+        Reads the image file and applies the look-up tables.
+
+        :param file_path: The path to the image file
+        :type file_path: str
+        :param file_extension: The extension of the image file
+        :type file_extension: str
+        """
         image = None
         if file_extension == ".dcm":
             # Read the DICOM file
@@ -897,6 +944,7 @@ class MainApp(QMainWindow):
         self.connection_manager.connect(self.resize_timer.timeout, self.delayed_visibility_update)
 
     def sort_toolbar_on_resized(self):
+        """Sort the toolbar on resize events."""
         toolbar_height = self.labelling_toolbar.sizeHint().height()
         should_show = toolbar_height * 0.9 <= self.height()
 
@@ -905,6 +953,7 @@ class MainApp(QMainWindow):
             self.resize_timer.start(200)  # Adjust the delay as needed
 
     def delayed_visibility_update(self):
+        """Update the visibility of the viewed icon after a delay."""
         toolbar_height = self.labelling_toolbar.sizeHint().height()
         should_show = toolbar_height * 0.9 <= self.height()
 
@@ -912,13 +961,19 @@ class MainApp(QMainWindow):
             self.viewed_icon.setVisible(should_show)
 
     def correct_labelling_toolbar_orientation(self):
+        """Correct the orientation of the labelling toolbar."""
         self.labelling_toolbar.setOrientation(Qt.Orientation.Vertical)
 
-
     def show_page1(self):
+        """
+        Shows the first page of the stacked widget.
+        """
         self.stack.setCurrentIndex(0)
 
     def show_page2(self):
+        """
+        Shows the second page of the stacked widget.
+        """
         self.stack.setCurrentIndex(1)
 
     def restore_from_saved_state(self):
@@ -946,14 +1001,18 @@ class MainApp(QMainWindow):
         self.window_center_slider.setValue(127)
         self.window_width_slider.setValue(255)
 
-    def change_image(self, direction, prev_failed=False):
+    def change_image(self, direction: str, go_to_index: Optional[int] = None, prev_failed: bool = False):
         """
         Changes the current image in the file list based on the given direction.
 
         :param direction: Either "previous" or "next" image
-        :param prev_failed: bool, only applicable if direction is "next"
+        :type direction: str
+        :param go_to_index: Only applicable if direction is "go_to"
+        :type go_to_index: Optional[int]
+        :param prev_failed: Only applicable if direction is "next"
+        :type prev_failed: bool
         """
-        if direction not in ("previous", "next"):
+        if direction not in ("previous", "next", "go_to"):
             raise ValueError("Invalid direction value. Expected 'previous' or 'next'.")
 
         for cbox in self.findings:
@@ -975,6 +1034,8 @@ class MainApp(QMainWindow):
             self.current_index -= 1
             if self.current_index < 0:
                 self.current_index = len(self.file_list) - 1
+        elif direction == "go_to":
+            self.current_index = go_to_index
         else:
             # Find the index of the next unviewed file
             next_unviewed_index = (self.current_index + 1) % len(self.file_list)
@@ -1065,6 +1126,8 @@ class MainApp(QMainWindow):
         if event.key() == Qt.Key.Key_B:
             self.previous_image()
         elif event.key() == Qt.Key.Key_N:
+            self.next_image()
+        elif event.key() == Qt.Key.Key_Space:
             self.next_image()
         elif event.key() == Qt.Key.Key_Minus or event.key() == Qt.Key.Key_Underscore:
             self.zoom_out()
@@ -1279,7 +1342,7 @@ class MainApp(QMainWindow):
         """
         image_actions = [self.invert_action, self.rotate_left_action, self.rotate_right_action, self.zoom_in_action,
                          self.zoom_out_action, self.reset_window_action]
-        nav_actions = [self.prevAction, self.nextAction,]
+        nav_actions = [self.prevAction, self.nextAction, self.goToAction]
 
         # create the help menu
         help_menu = QMenu("Help", self)
@@ -1307,6 +1370,8 @@ class MainApp(QMainWindow):
         # Create the navigation menu
         navigation_menu = QMenu("&Navigation", self)
         for action in nav_actions:
+            if action == self.goToAction:
+                navigation_menu.addSeparator()
             navigation_menu.addAction(action)
             help_menu.addAction(action)
 

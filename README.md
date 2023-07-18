@@ -76,7 +76,7 @@ Your progress through the folder of images is shown in the progress bar at the b
 |                      Key                      |       Action       |
 |:---------------------------------------------:|:------------------:|
 |                 <kbd>B</kbd>                  |   Previous image   |
-|                 <kbd>N</kbd>                  |     Next image     |
+|       <kbd>N</kbd> or <kbd>Space</kbd>        |     Next image     |
 |          <kbd>+</kbd> / <kbd>=</kbd>          |      Zoom in       |
 |          <kbd>-</kbd> / <kbd>_</kbd>          |      Zoom out      |
 |                 <kbd>I</kbd>                  |   Invert colours   |

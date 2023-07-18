@@ -1,7 +1,8 @@
 """
 main.py
 
-Main module for Speedy IQA, a DICOM viewer for desktop which allows image labeling and the drawing of bounding boxes.
+Main module for Speedy IQA, a dual image viewer for desktop which allows image labeling for an image compared to a
+reference image.
 
 This module initializes the application, sets the theme and icon styles, and displays the main window or
 configuration wizard based on user input.
@@ -61,6 +62,9 @@ def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawes
     """
 
     def cleanup():
+        """
+        Cleanup function. Closes and deletes all windows and widgets.
+        """
         # Cleanup load intro window
         try:
             # This might raise an exception if setup_window was never created,

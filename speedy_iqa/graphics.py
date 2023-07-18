@@ -1,10 +1,10 @@
 """
 graphics.py: Custom graphics items for the Speedy IQA Package.
 
-This module defines custom graphics items for the Speedy IQA Package to allow for drawing bounding boxes on images.
+This module defines custom graphics items for the Speedy IQA Package.
 
 Classes:
-    - CustomGraphicsView: Custom graphics view to handle drawing bounding boxes on images.
+    - CustomGraphicsView.
 """
 
 from PyQt6.QtCore import *
@@ -17,7 +17,7 @@ import math
 
 class CustomGraphicsView(QGraphicsView):
     """
-    Custom graphics view to handle zooming, panning, resizing and drawing bounding boxes. This class is used to display
+    Custom graphics view to handle zooming, panning, resizing. This class is used to display
     the images and is the central widget of the main window.
 
     Methods:

@@ -902,3 +902,107 @@ class SetupWindow(QDialog):
         unique_radiobs = sorted(list(set(radiobs)))
 
         return filenames, unique_cboxes, unique_cbox_values, unique_radiobs
+
+
+class FileSelectionDialog(QDialog):
+    """
+    Dialog for selecting a file from a list of files.
+
+    :param file_list: list of files
+    :type file_list: List[str]
+    :param parent: parent widget
+    :type parent: Optional[QWidget]
+    """
+    def __init__(self, file_list: List[str], parent: Optional[QWidget] = None):
+        """
+        Initialize the dialog.
+
+        :param file_list: list of files
+        :type file_list: List[str]
+        :param parent: parent widget
+        :type parent: Optional[QWidget]
+        """
+        super().__init__(parent)
+        self.setWindowTitle("Select Image")
+
+        self.file_list = file_list
+        self.filtered_list = file_list
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        self.search_bar = QLineEdit()
+        self.connection_manager = ConnectionManager()
+        self.connection_manager.connect(self.search_bar.textChanged, self.filter_list)
+        self.layout.addWidget(self.search_bar)
+
+        self.list_widget = QListWidget()
+        self.list_widget.addItems(self.file_list)
+        self.connection_manager.connect(self.list_widget.itemClicked, self.select_file)
+        self.connection_manager.connect(self.list_widget.itemDoubleClicked, self.select_and_accept_file)
+        self.layout.addWidget(self.list_widget)
+
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.connection_manager.connect(self.buttonBox.accepted, self.accept_file)
+        self.connection_manager.connect(self.buttonBox.rejected, self.reject)
+        self.layout.addWidget(self.buttonBox)
+
+        self.selected_file = None
+        self.adjust_size()
+
+    def adjust_size(self):
+        """
+        Adjust the size of the dialog to fit the list of files.
+        """
+        max_width = 0
+        fm = QFontMetrics(self.font())
+        for file in self.file_list:
+            width = fm.horizontalAdvance(file)
+            if width > max_width:
+                max_width = width
+        # Consider some padding
+        max_width += 50
+        height = 500
+        self.resize(max_width, height)
+
+    def filter_list(self, query):
+        """
+        Filter the list of files based on a query.
+
+        :param query: query to filter the list of files
+        :type query: str
+        """
+        self.filtered_list = [file for file in self.file_list if query.lower() in file.lower()]
+        self.list_widget.clear()
+        self.list_widget.addItems(self.filtered_list)
+
+    def select_file(self, item):
+        """
+        Select a file from the list of files.
+
+        :param item: item to select
+        :type item: QListWidgetItem
+        """
+        self.selected_file = item.text()
+        self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+
+    def select_and_accept_file(self, item):
+        """
+        Select a file from the list of files and accept the dialog.
+
+        :param item: item to select
+        :type item: QListWidgetItem
+        """
+        self.selected_file = item.text()
+        self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        self.accept_file()
+
+    def accept_file(self):
+        """
+        Accept the dialog if a file is selected, otherwise reject it.
+        """
+        if self.selected_file is not None:
+            self.accept()
+        else:
+            self.reject()
