@@ -99,10 +99,10 @@ class MainApp(QMainWindow):
         self.json_path = self.settings.value("json_path", "")
         self.loaded = self.load_from_json()
         if not self.loaded:
+            self.dir_path = self.settings.value("image_path", ".")
             self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith((
                 '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
             ))])
-            self.dir_path = self.settings.value("image_path", ".")
             self.reference_dir_path = self.settings.value("reference_path", ".")
             self.reference_delimiter = self.settings.value("reference_delimiter", "__")
             self.viewed_values = {f: False for f in self.file_list}
@@ -173,7 +173,9 @@ class MainApp(QMainWindow):
             self.restore_from_saved_state()
 
         # Now set up the main window layout and toolbars
-        main_layout = QHBoxLayout()
+        self.main_layout = QHBoxLayout()
+        print(self.current_index)
+        print(len(self.file_list))
         self.setWindowTitle(f"Speedy IQA - File: {self.file_list[self.current_index]}")
 
         # Create the image scene and set as the central widget
@@ -187,12 +189,12 @@ class MainApp(QMainWindow):
         self.reference_scene.addItem(self.reference_pixmap_item)
         self.image_view.setScene(self.image_scene)
         self.reference_view.setScene(self.reference_scene)
-        main_layout.addWidget(self.image_view)
-        main_layout.addWidget(self.reference_view)
+        self.main_layout.addWidget(self.image_view)
+        self.main_layout.addWidget(self.reference_view)
         self.apply_stored_rotation()    # Apply any rotation previously applied to the image
-        central_widget = QWidget(self)
-        central_widget.setLayout(main_layout)
-        self.setCentralWidget(central_widget)
+        self.central_widget = QWidget(self)
+        self.central_widget.setLayout(self.main_layout)
+        self.setCentralWidget(self.central_widget)
 
         # Create the navigation toolbar
         self.file_tool_bar = QToolBar(self)
@@ -373,10 +375,52 @@ class MainApp(QMainWindow):
 
         QTimer.singleShot(0, self.set_items_on_initial_size)
 
+        self.central_resize_timer = QTimer()
+        self.central_resize_timer.setSingleShot(True)
+        self.connection_manager.connect(self.resized, self.start_central_resize_timer)
+        self.connection_manager.connect(self.central_resize_timer.timeout, self.determine_layout)
+
     def set_items_on_initial_size(self):
+        self.determine_layout()
         self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
         self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
         self.delayed_visibility_update()
+
+    def start_central_resize_timer(self):
+        self.central_resize_timer.start(200)
+
+    def determine_layout(self):
+        image_aspect_ratio = self.pixmap.size().width() / self.pixmap.size().height()
+
+        window_height = self.height()  # height of window
+        # Estimate central widget width as window width - labelling toolbar width - 100 pixels for padding
+        labelling_toolbar_width = self.labelling_toolbar.sizeHint().width()
+        window_width = self.width() - labelling_toolbar_width - 100
+        window_aspect_ratio = window_width / window_height
+
+        if (window_aspect_ratio > 1 and image_aspect_ratio > 1) or (window_aspect_ratio < 1 and image_aspect_ratio < 1):
+            # Both the window and the image are landscape, or both are portrait
+            layout = QHBoxLayout()
+        else:
+            # The window and the image have different orientations
+            layout = QVBoxLayout()
+
+        layout.addWidget(self.image_view)
+        layout.addWidget(self.reference_view)
+
+        central_widget = QWidget(self)
+        central_widget.setLayout(layout)
+
+        self.setCentralWidget(central_widget)
+
+        QTimer.singleShot(0, self.fit_to_view)
+
+    def fit_to_view(self):
+        self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        self.image_view.scale(self.image_view.zoom, self.image_view.zoom)
+        self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(),
+                                      Qt.AspectRatioMode.KeepAspectRatio)
+        self.reference_view.scale(self.reference_view.zoom, self.reference_view.zoom)
 
     def update_progress_bar(self, progress: float):
         """

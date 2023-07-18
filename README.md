@@ -116,8 +116,7 @@ Executable Application
 
 The executable application may be downloaded from:
 - Mac OS X:  https://github.com/selbs/speedy_iqa/releases/
-  - *Universal binary for both 86x64 (Intel) and arm64 (Apple Silicon) Macs*. 
-- Windows: [add link](https://www.example_link.com)
+- Windows: [TO DO](https://www.example_link.com)
 
 ### Creating an Executable
 
