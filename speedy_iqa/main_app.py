@@ -196,9 +196,19 @@ class MainApp(QMainWindow):
 
         # Create the navigation toolbar
         self.file_tool_bar = QToolBar(self)
+
         # Create the logo action
         logo_path = os.path.join(resource_dir, 'assets/logo.png')
-        logo_pixmap = QPixmap(logo_path)
+        img = iio.imread(logo_path)
+        # Pad the logo to make it square for QIcon, otherwise it will be stretched
+        height, width, _ = img.shape
+        size = max(height, width)
+        y_pad = (size - height) // 2
+        x_pad = (size - width) // 2
+        padded_logo = np.pad(img, [
+                (y_pad, size - height - y_pad), (x_pad, size - width - x_pad), (0, 0)
+        ], mode='constant', constant_values=0)
+        logo_pixmap = QPixmap(array2qimage(padded_logo))
         self.logoAction = QAction(QIcon(logo_pixmap), "&About", self)
         self.file_tool_bar.addAction(self.logoAction)
         # Create exit and save action buttons
