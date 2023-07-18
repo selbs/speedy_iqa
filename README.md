@@ -86,19 +86,19 @@ Your progress through the folder of images is shown in the progress bar at the b
 
 ### Keyboard Shortcuts
 
-|                      Key                      |       Action       |
-|:---------------------------------------------:|:------------------:|
-|                 <kbd>B</kbd>                  |   Previous image   |
-|       <kbd>N</kbd> or <kbd>Space</kbd>        |     Next image     |
-|          <kbd>+</kbd> / <kbd>=</kbd>          |      Zoom in       |
-|          <kbd>-</kbd> / <kbd>_</kbd>          |      Zoom out      |
-|                 <kbd>I</kbd>                  |   Invert colours   |
-|                 <kbd>R</kbd>                  | Rotate image right |
-|                 <kbd>L</kbd>                  | Rotate image left  |
-|                 <kbd>S</kbd>                  |        Save        |
-| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd> |        Quit        |
-|            <kbd>Cmd</kbd> + Scroll            |      Contrast      |
-|           <kbd>Shift</kbd> + Scroll           |     Brightness     |
+|                      Key                      |       Action        |
+|:---------------------------------------------:|:-------------------:|
+|                 <kbd>B</kbd>                  |   Previous image    |
+|       <kbd>N</kbd> or <kbd>Space</kbd>        |     Next image      |
+|          <kbd>+</kbd> / <kbd>=</kbd>          |       Zoom in       |
+|          <kbd>-</kbd> / <kbd>_</kbd>          |      Zoom out       |
+|                 <kbd>I</kbd>                  |   Invert colours    |
+|                 <kbd>R</kbd>                  | Rotate images right |
+|                 <kbd>L</kbd>                  | Rotate images left  |
+|                 <kbd>S</kbd>                  |        Save         |
+| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd> |        Quit         |
+|            <kbd>Cmd</kbd> + Scroll            |      Contrast       |
+|           <kbd>Shift</kbd> + Scroll           |     Brightness      |
 
 Note: <kbd>Cmd</kbd> + Scroll and <kbd>Shift</kbd> + Scroll are only currently available on Mac OS X.
 

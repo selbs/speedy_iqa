@@ -215,7 +215,7 @@ class LoadMessageBox(QDialog):
         left_layout.addWidget(web_text)
 
         # Create a QLabel to display the copyright information
-        cr_text = QLabel("MIT License, Copyright (c) 2023, Ian Selby.")
+        cr_text = QLabel("MIT License, Copyright (c) 2023, Ian Selby, Anna Breger and Sören Dittmer.")
         cr_text.setStyleSheet("font-size: 8px;")
         cr_text.setAlignment(Qt.AlignmentFlag.AlignRight)
         left_layout.addWidget(cr_text)
