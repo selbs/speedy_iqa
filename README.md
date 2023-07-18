@@ -61,6 +61,17 @@ speedy_iqa
 
 Alternatively, the app may be run from an executable (see below).
 
+### Selecting the Image and Reference Image Folders
+On loading the app and continuing through the welcome page, the setup window will allow you to select the directory
+containing the images to be labelled and the directory containing the reference image. 
+
+### The Image to Reference Filename Delimiter
+You must specify the delimiter to go from the image name to the reference name. This is how the program matches the two 
+images up for comparison. For example, if the image name is `image_1__preprocessed.png` and the reference name is 
+`image_1.png`, then the delimiter would be `__` (double underscore). The delimiter is used to find the reference image 
+for each image in the folder. If the reference image filenames are the same as the images to be labelled, then the 
+delimiter should be left blank.
+
 ### Inputs and Outputs
 
 #### Radiobuttons

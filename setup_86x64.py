@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 APP = ['speedy_iqa/main.py']
-OPTIONS = {'iconfile': 'speedy_iqa/assets/icns/white_panel.icns', 'includes': ['_cffi_backend'],
-           'resources': ['speedy_iqa/assets', 'speedy_iqa/config.yml', 'speedy_iqa/log.conf'],
-           'dylib_excludes': ['libgfortran.3.dylib'], 'frameworks': ['/usr/local/opt/libffi/lib/libffi.8.dylib'],
-           'dist_dir': 'dist/86x64',
-           } | dict(plist=dict(NSRequiresAquaSystemAppearance=False,
-                               CFBundleIconFile="speedy_iqa/assets/icns/white_panel.icns"))
+OPTIONS = {**{'iconfile': 'speedy_iqa/assets/logo.icns', 'includes': ['_cffi_backend'],
+              'resources': ['speedy_iqa/assets', 'speedy_iqa/config.yml', 'speedy_iqa/log.conf'],
+              'dylib_excludes': ['libgfortran.3.dylib'], 'frameworks': ['/usr/local/opt/libffi/lib/libffi.8.dylib'],
+              'dist_dir': 'dist/86x64',
+              }, **dict(plist=dict(NSRequiresAquaSystemAppearance=False,
+                                   CFBundleIconFile="speedy_iqa/assets/logo.icns"))}
 
 setup(
     app=APP,
@@ -33,10 +33,6 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "Bottleneck>=1.3.5",
-        "flit-core>=3.6.0",
-        "install>=1.3.5",
-        "pandas>=1.5.3",
         "pip>=23.0.1",
         "pydicom>=2.3.1",
         "pylibjpeg==1.4.0",
@@ -50,5 +46,6 @@ setup(
         "QtAwesome>=1.2.3",
         "matplotlib>=3.4.3",
         "imageio>=2.31.0",
+        "pillow>=10.0.0",
     ],
 )

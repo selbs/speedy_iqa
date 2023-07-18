@@ -322,7 +322,7 @@ class MainApp(QMainWindow):
         self.prevAction = QAction(self.icons['prev'], "&Back", self)
         self.goToAction = QAction(self.icons['goto'], "&Go To Image...", self)
         self.nextAction = QAction(self.icons['next'], "&Next", self)
-        action_width = self.labelling_toolbar.sizeHint().width() / 3
+        action_width = self.labelling_toolbar.sizeHint().width() // 3
 
         self.prevButton = QToolButton()
         self.prevButton.setDefaultAction(self.prevAction)
