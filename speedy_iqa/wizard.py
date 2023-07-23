@@ -82,7 +82,7 @@ class RadioButtonPage(QWizardPage):
         """
         Adds a radio button group to the page.
         """
-        dialog = RadioButtonGroupDialog(self)
+        dialog = RadioButtonGroupDialog()
         if dialog.exec() == QDialog.DialogCode.Accepted:
             group = QGroupBox(dialog.title)
             layout = QGridLayout()  # Use QGridLayout for multiple columns
@@ -346,7 +346,7 @@ class ConfigurationWizard(QWizard):
         self.resize(700, 800)
 
         # Set the default button to be the next / finish button
-        next_button = self.button(QWizard.NextButton)
+        next_button = self.button(QWizard.WizardButton.NextButton)
         next_button.setDefault(True)
 
     # def create_options_page(self):
@@ -481,7 +481,7 @@ class ConfigurationWizard(QWizard):
     #     button.deleteLater()
 
     @staticmethod
-    def create_radio_page(page_no) -> QWizardPage:
+    def create_radio_page(page_no) -> RadioButtonPage:
         """
         Creates the page of the wizard that allows users to name the radio buttons.
 

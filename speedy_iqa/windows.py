@@ -488,7 +488,7 @@ class SetupWindow(QDialog):
 
         layout.addSpacerItem(expanding_spacer)
         # Add dialog buttons
-        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         self.connection_manager.connect(self.button_box.accepted, self.on_accepted)
         self.connection_manager.connect(self.button_box.rejected, self.reject)
         layout.addWidget(self.button_box)

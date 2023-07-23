@@ -152,6 +152,7 @@ class MainApp(QMainWindow):
             'zoom_out': qta.icon("mdi.magnify-minus"),
             'exit': qta.icon("mdi.exit-to-app"),
             'reset_win': qta.icon("mdi.credit-card-refresh"),
+            'auto_win': qta.icon("mdi.image-auto-adjust"),
             'viewed': qta.icon("mdi.checkbox-marked-circle", color="green", scale=2),
             'not_viewed': qta.icon("mdi.close-circle", color="red", scale=2),
             'question': qta.icon("mdi.help-circle", color="white", scale=2)
@@ -174,8 +175,6 @@ class MainApp(QMainWindow):
 
         # Now set up the main window layout and toolbars
         self.main_layout = QHBoxLayout()
-        print(self.current_index)
-        print(len(self.file_list))
         self.setWindowTitle(f"Speedy IQA - File: {self.file_list[self.current_index]}")
 
         # Create the image scene and set as the central widget
@@ -303,7 +302,9 @@ class MainApp(QMainWindow):
         # Create a reset window button and label the window sliders
         self.image_toolbar.addSeparator()
         self.reset_window_action = QAction(self.icons['reset_win'], "Reset Brightness and Contrast", self)
+        self.auto_window_action = QAction(self.icons['auto_win'], "Auto-adjust", self)
         self.image_toolbar.addAction(self.reset_window_action)
+        self.image_toolbar.addAction(self.auto_window_action)
         self.image_toolbar.addAction(self.window_center_label)
         self.image_toolbar.addWidget(self.window_center_slider)
         self.image_toolbar.addAction(self.window_width_label)
@@ -442,6 +443,7 @@ class MainApp(QMainWindow):
         self.connection_manager.connect(self.zoom_in_action.triggered, self.zoom_in)
         self.connection_manager.connect(self.zoom_out_action.triggered, self.zoom_out)
         self.connection_manager.connect(self.reset_window_action.triggered, self.reset_window_sliders)
+        self.connection_manager.connect(self.auto_window_action.triggered, self.auto_window_sliders)
         self.connection_manager.connect(self.window_center_slider.valueChanged, self.update_image)
         self.connection_manager.connect(self.window_width_slider.valueChanged, self.update_image)
         self.connection_manager.connect(self.nextAction.triggered, self.reset_window_sliders)
@@ -1055,6 +1057,29 @@ class MainApp(QMainWindow):
         self.window_center_slider.setValue(127)
         self.window_width_slider.setValue(255)
 
+    def auto_window_sliders(self):
+        """
+        Resets the window sliders to the default values.
+        """
+        # Calculate the bounds for the central 90% of the intensities
+        lower_bound = np.percentile(self.image, 5)
+        upper_bound = np.percentile(self.image, 95)
+
+        # Filter out the intensities outside of these bounds
+        central_image = self.image[(self.image >= lower_bound) & (self.image <= upper_bound)]
+
+        # Calculate median of the filtered image, which will be our window level
+        window_level = np.median(central_image)
+
+        # Calculate window width to cover a certain percentile of the pixel intensities
+        percentile = 99
+        lower = np.percentile(central_image, (100 - percentile) / 2)
+        upper = np.percentile(central_image, 100 - ((100 - percentile) / 2))
+        window_width = upper - lower
+
+        self.window_center_slider.setValue(int(window_level))
+        self.window_width_slider.setValue(int(window_width))
+
     def change_image(self, direction: str, go_to_index: Optional[int] = None, prev_failed: bool = False):
         """
         Changes the current image in the file list based on the given direction.
@@ -1395,7 +1420,7 @@ class MainApp(QMainWindow):
         Initializes the menus.
         """
         image_actions = [self.invert_action, self.rotate_left_action, self.rotate_right_action, self.zoom_in_action,
-                         self.zoom_out_action, self.reset_window_action]
+                         self.zoom_out_action, self.reset_window_action, self.auto_window_action]
         nav_actions = [self.prevAction, self.nextAction, self.goToAction]
 
         # create the help menu
