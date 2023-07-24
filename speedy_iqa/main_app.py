@@ -886,7 +886,8 @@ class MainApp(QMainWindow):
 
         radiobutton_heading = QLabel(self)
         radiobutton_heading.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        radiobutton_heading.setText(f"For {self.task}, please rate the image relative to the reference:".upper())
+        radiobutton_heading.setText(f"For {self.task}, please rate the image quality "
+                                    f"relative to the reference:".upper())
         radiobutton_heading.setWordWrap(True)
         radiobutton_heading.setStyleSheet("QLabel { margin-right: 10px; }")
         radiobutton_heading.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -910,6 +911,18 @@ class MainApp(QMainWindow):
             scroll1.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             # Add the scroll area to the page layout
             self.page1_layout.addWidget(scroll1)
+
+        instructions1 = QLabel(self)
+        instructions1.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        instructions1.setText("1 = VERY POOR  /  4 = VERY GOOD")
+        instructions1.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+        self.page1_layout.addWidget(instructions1)
+
+        # spacer4 = QWidget()
+        # spacer4.setMinimumHeight(0)
+        # spacer4.setMaximumHeight(10)
+        # spacer4.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        # layout.addWidget(spacer4)
 
         button = QPushButton('Continue', clicked=self.show_page2)
         button.setStyleSheet("font-size: 14px;")
@@ -935,6 +948,12 @@ class MainApp(QMainWindow):
             scroll2.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             # # Add the scroll area to the page layout
             self.page2_layout.addWidget(scroll2)
+
+        instructions2 = QLabel(self)
+        instructions2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
+        instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+        self.page2_layout.addWidget(instructions2)
 
         button = QPushButton('Back', clicked=self.show_page1)
         button.setStyleSheet("font-size: 14px;")
