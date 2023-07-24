@@ -513,33 +513,33 @@ class MainApp(QMainWindow):
 
         return backup_files
 
-    def wheelEvent(self, event: QWheelEvent):
-        """
-        Override the wheelEvent function to allow for scrolling with the mouse wheel to change the windowing parameters.
-        - Ctrl/Cmd + Scroll: Change window width
-        - Shift + Scroll: Change window center
-
-        :param event: The wheelEvent function to override
-        :type event: QWheelEvent
-        """
-        if event.modifiers() == Qt.KeyboardModifier.ControlModifier:  # check if Ctrl key is pressed
-            delta = event.angleDelta().y()  # get the scroll direction
-            if delta > 0:
-                # increase window width
-                self.window_width_slider.setValue(self.window_width_slider.value() + 10)
-            elif delta < 0:
-                # decrease window width
-                self.window_width_slider.setValue(self.window_width_slider.value() - 10)
-        elif event.modifiers() == Qt.KeyboardModifier.ShiftModifier:  # check if Shft key is pressed
-            delta = event.angleDelta().y()  # get the scroll direction
-            if delta > 0:
-                # increase window width
-                self.window_center_slider.setValue(self.window_center_slider.value() + 5)
-            elif delta < 0:
-                # decrease window width
-                self.window_center_slider.setValue(self.window_center_slider.value() - 5)
-        else:
-            super().wheelEvent(event)
+    # def wheelEvent(self, event: QWheelEvent):
+    #     """
+    #     Override the wheelEvent function to allow for scrolling with the mouse wheel to change the windowing parameters.
+    #     - Ctrl/Cmd + Scroll: Change window width
+    #     - Shift + Scroll: Change window center
+    #
+    #     :param event: The wheelEvent function to override
+    #     :type event: QWheelEvent
+    #     """
+    #     if event.modifiers() == Qt.KeyboardModifier.ControlModifier:  # check if Ctrl key is pressed
+    #         delta = event.angleDelta().y()  # get the scroll direction
+    #         if delta > 0:
+    #             # increase window width
+    #             self.window_width_slider.setValue(self.window_width_slider.value() + 10)
+    #         elif delta < 0:
+    #             # decrease window width
+    #             self.window_width_slider.setValue(self.window_width_slider.value() - 10)
+    #     elif event.modifiers() == Qt.KeyboardModifier.ShiftModifier:  # check if Shft key is pressed
+    #         delta = event.angleDelta().y()  # get the scroll direction
+    #         if delta > 0:
+    #             # increase window width
+    #             self.window_center_slider.setValue(self.window_center_slider.value() + 5)
+    #         elif delta < 0:
+    #             # decrease window width
+    #             self.window_center_slider.setValue(self.window_center_slider.value() - 5)
+    #     else:
+    #         super().wheelEvent(event)
 
     def open_config_yml(self) -> Dict:
         """
@@ -1209,8 +1209,8 @@ class MainApp(QMainWindow):
             self.zoom_out()
         elif event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
             self.zoom_in()
-        elif event.key() == Qt.Key.Key_I:
-            self.invert_colours()
+        # elif event.key() == Qt.Key.Key_I:
+        #     self.invert_colours()
         elif event.key() == Qt.Key.Key_R:
             self.rotate_image_right()
         elif event.key() == Qt.Key.Key_L:
