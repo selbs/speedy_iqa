@@ -163,8 +163,8 @@ class MainApp(QMainWindow):
         self.setWindowIcon(QIcon(icon_path))
 
         # Set the central widget to the image viewer
-        self.image_view = CustomGraphicsView(self, main_window=True)
-        self.reference_view = CustomGraphicsView(self, main_window=True)
+        self.image_view = CustomGraphicsView(self, main_window=True, label="Assessment")
+        self.reference_view = CustomGraphicsView(self, main_window=True, label="Reference")
 
         # Assign colors to findings
         self.assign_colors_to_findings()
@@ -188,8 +188,8 @@ class MainApp(QMainWindow):
         self.reference_scene.addItem(self.reference_pixmap_item)
         self.image_view.setScene(self.image_scene)
         self.reference_view.setScene(self.reference_scene)
-        self.main_layout.addWidget(self.image_view)
         self.main_layout.addWidget(self.reference_view)
+        self.main_layout.addWidget(self.image_view)
         self.apply_stored_rotation()    # Apply any rotation previously applied to the image
         self.central_widget = QWidget(self)
         self.central_widget.setLayout(self.main_layout)
@@ -406,8 +406,8 @@ class MainApp(QMainWindow):
             # The window and the image have different orientations
             layout = QVBoxLayout()
 
-        layout.addWidget(self.image_view)
         layout.addWidget(self.reference_view)
+        layout.addWidget(self.image_view)
 
         central_widget = QWidget(self)
         central_widget.setLayout(layout)
@@ -798,6 +798,7 @@ class MainApp(QMainWindow):
         :type options_list: list
         """
         group_box = QGroupBox(name)
+        group_box.setStyleSheet("QGroupBox { font-size: 14px; }")
         options = [str(option) for option in options_list]
         max_label_length = max([len(label) for label in options])
         layout = QGridLayout()
@@ -937,7 +938,9 @@ class MainApp(QMainWindow):
             # Add the scroll area to the page layout
             self.page1_layout.addWidget(scroll1)
 
-        self.page1_layout.addWidget(QPushButton('Continue', clicked=self.show_page2))
+        button = QPushButton('Continue', clicked=self.show_page2)
+        button.setStyleSheet("font-size: 14px;")
+        self.page1_layout.addWidget(button)
         self.page1.setLayout(self.page1_layout)
         self.page1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -960,7 +963,9 @@ class MainApp(QMainWindow):
             # # Add the scroll area to the page layout
             self.page2_layout.addWidget(scroll2)
 
-        self.page2_layout.addWidget(QPushButton('Back', clicked=self.show_page1))
+        button = QPushButton('Back', clicked=self.show_page1)
+        button.setStyleSheet("font-size: 14px;")
+        self.page2_layout.addWidget(button)
         self.page2.setLayout(self.page2_layout)
         self.page2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -988,7 +993,7 @@ class MainApp(QMainWindow):
         layout.addWidget(self.textbox)
 
         self.labelling_toolbar.addWidget(layout_widget)
-        self.labelling_toolbar.setStyleSheet("QToolBar QLabel { font-weight: bold; }")
+        self.labelling_toolbar.setStyleSheet("QToolBar QLabel { font-weight: bold; font-size: 14px; }")
         # scroll_action = QWidgetAction(self)
         # scroll_action.setDefaultWidget(scroll)
         # self.labelling_toolbar.addAction(scroll_action)

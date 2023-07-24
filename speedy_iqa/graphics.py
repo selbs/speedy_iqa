@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import *
 from typing import Optional, Dict, List
 from speedy_iqa.utils import ConnectionManager
 import math
+from qt_material import get_theme
 
 
 class CustomGraphicsView(QGraphicsView):
@@ -25,13 +26,23 @@ class CustomGraphicsView(QGraphicsView):
         - zoom_out (self): Zoom out by a factor of 0.8 (20%).
         - on_main_window_resized (self): Resize the image and maintain the same zoom when the main window is resized.
     """
-    def __init__(self, parent: Optional[QWidget] = None, main_window = False):
+    def __init__(self, parent: Optional[QWidget] = None, main_window: bool = False, label: Optional[str] = None):
         """
         Initialize the custom graphics view.
         """
         super().__init__()
         # self.connections = {}
         self.connection_manager = ConnectionManager()
+
+        if label is not None:
+            self.label = QLabel(label.upper(), self)
+            self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.label.setStyleSheet(
+                f"background-color: {get_theme('dark_blue.xml')['primaryLightColor']}; margin: 3px; padding: 3px; "
+                f"font-size: 16px; font-weight: bold; color: {get_theme('dark_blue.xml')['secondaryDarkColor']};"
+            )
+            self.label.move(5, 5)  # Place label at the top-left corner with 5px offset from the border.
+
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontAdjustForAntialiasing, True)
         self.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontSavePainterState, True)
@@ -40,6 +51,7 @@ class CustomGraphicsView(QGraphicsView):
         self.start_rect = None
         self.current_finding = None
         self.current_color = None
+        self.label = label
         # self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
         self.touch_points = []

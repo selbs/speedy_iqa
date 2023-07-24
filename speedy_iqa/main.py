@@ -111,6 +111,10 @@ def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawes
     else:
         app.setStyle(QStyleFactory.create(theme))
 
+    font = app.font()
+    font.setPointSize(18)
+    app.setFont(font)
+
     # Set the application icon theme
     QIcon.setThemeName(icon_theme)
 
