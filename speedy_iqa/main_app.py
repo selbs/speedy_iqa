@@ -15,12 +15,12 @@ from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 from pydicom.pixel_data_handlers.util import apply_modality_lut, apply_voi_lut
 from qimage2ndarray import array2qimage
-from qt_material import get_theme
+from qt_material import get_theme, apply_stylesheet
 import qtawesome as qta
 from PyQt6.QtCore import QTimer
 import datetime
 import json
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 import matplotlib.pyplot as plt
 import sys
 from math import ceil
@@ -55,7 +55,7 @@ class MainApp(QMainWindow):
     """
     resized = pyqtSignal()
 
-    def __init__(self, settings):
+    def __init__(self, app, settings):
         """
         Initialize the main window.
 
@@ -64,6 +64,7 @@ class MainApp(QMainWindow):
         """
         super().__init__()
         # Initialize UI
+        self.app = app
         self.settings = settings
         self.connection_manager = ConnectionManager()
         self.about_box = AboutMessageBox()
@@ -136,27 +137,8 @@ class MainApp(QMainWindow):
         )
 
         # Set the icons dictionary used in the main window
-        self.icons = {
-            'save': qta.icon("mdi.content-save-all"),
-            'save_as': qta.icon("mdi.content-save-edit"),
-            'next': qta.icon("mdi.arrow-right-circle"),
-            'prev': qta.icon("mdi.arrow-left-circle"),
-            'goto': qta.icon("mdi.file-find"),
-            'ww': qta.icon("mdi.contrast-box"),
-            'wc': qta.icon("mdi.brightness-5"),
-
-            'inv': qta.icon("mdi.invert-colors"),
-            'rot_right': qta.icon("mdi.rotate-right"),
-            'rot_left': qta.icon("mdi.rotate-left"),
-            'zoom_in': qta.icon("mdi.magnify-plus"),
-            'zoom_out': qta.icon("mdi.magnify-minus"),
-            'exit': qta.icon("mdi.exit-to-app"),
-            'reset_win': qta.icon("mdi.credit-card-refresh"),
-            'auto_win': qta.icon("mdi.image-auto-adjust"),
-            'viewed': qta.icon("mdi.checkbox-marked-circle", color="green", scale=2),
-            'not_viewed': qta.icon("mdi.close-circle", color="red", scale=2),
-            'question': qta.icon("mdi.help-circle", color="white", scale=2)
-        }
+        self.icons = {}
+        self.set_icons()
 
         # Set the window icon
         icon_path = os.path.join(resource_dir, 'assets/logo.icns')
@@ -247,8 +229,8 @@ class MainApp(QMainWindow):
 
         # Create the image toolbar for image manipulation
         self.image_toolbar = QToolBar(self)
-        self.invert_action = QAction(self.icons['inv'], "Invert", self)
-        self.image_toolbar.addAction(self.invert_action)
+        # self.invert_action = QAction(self.icons['inv'], "Invert", self)
+        # self.image_toolbar.addAction(self.invert_action)
         self.rotate_left_action = QAction(self.icons['rot_left'], "Rotate 90° Left", self)
         self.image_toolbar.addAction(self.rotate_left_action)
         self.rotate_right_action = QAction(self.icons['rot_right'], "Rotate 90° Right", self)
@@ -261,22 +243,7 @@ class MainApp(QMainWindow):
         self.image_toolbar.addAction(self.zoom_out_action)
 
         # Set scrollbar style (too dark with qt material dark theme...)
-        self.image_view.setStyleSheet(f"""
-            QScrollBar::handle:vertical {{
-                background: {get_theme('dark_blue.xml')['primaryColor']};
-                }}
-            QScrollBar::handle:horizontal {{
-                background: {get_theme('dark_blue.xml')['primaryColor']};
-                }}
-        """)
-        self.reference_view.setStyleSheet(f"""
-                    QScrollBar::handle:vertical {{
-                        background: {get_theme('dark_blue.xml')['primaryColor']};
-                        }}
-                    QScrollBar::handle:horizontal {{
-                        background: {get_theme('dark_blue.xml')['primaryColor']};
-                        }}
-                """)
+        self.set_scroll_bar_colors()
 
         # Create sliders for windowing
         self.window_center_label = QAction(self.icons['wc'], "Brightness", self)
@@ -301,24 +268,24 @@ class MainApp(QMainWindow):
 
         # Create a reset window button and label the window sliders
         self.image_toolbar.addSeparator()
-        self.reset_window_action = QAction(self.icons['reset_win'], "Reset Brightness and Contrast", self)
-        self.auto_window_action = QAction(self.icons['auto_win'], "Auto-adjust", self)
-        self.image_toolbar.addAction(self.reset_window_action)
-        self.image_toolbar.addAction(self.auto_window_action)
-        self.image_toolbar.addAction(self.window_center_label)
-        self.image_toolbar.addWidget(self.window_center_slider)
-        self.image_toolbar.addAction(self.window_width_label)
-        self.image_toolbar.addWidget(self.window_width_slider)
-        self.image_toolbar.addWidget(spacer_widget)
-        self.image_toolbar.addSeparator()
+        # self.reset_window_action = QAction(self.icons['reset_win'], "Reset Brightness and Contrast", self)
+        # self.auto_window_action = QAction(self.icons['auto_win'], "Auto-adjust", self)
+        # self.image_toolbar.addAction(self.reset_window_action)
+        # self.image_toolbar.addAction(self.auto_window_action)
+        # self.image_toolbar.addAction(self.window_center_label)
+        # self.image_toolbar.addWidget(self.window_center_slider)
+        # self.image_toolbar.addAction(self.window_width_label)
+        # self.image_toolbar.addWidget(self.window_width_slider)
+        # self.image_toolbar.addWidget(spacer_widget)
+        # self.image_toolbar.addSeparator()
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.image_toolbar)
 
         self.nav_toolbar = QToolBar(self)
-        spacer = QWidget()
-        line_color = get_theme("dark_blue.xml")['secondaryLightColor']
-        spacer.setStyleSheet(f"border-bottom: 1px solid {line_color};")
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.nav_toolbar.addWidget(spacer)
+        self.nav_spacer = QWidget()
+        self.line_color = get_theme("dark_blue.xml")['secondaryLightColor']
+        self.nav_spacer.setStyleSheet(f"border-bottom: 1px solid {self.line_color};")
+        self.nav_spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.nav_toolbar.addWidget(self.nav_spacer)
         self.nav_toolbar.setMovable(False)
         self.nav_toolbar.addSeparator()
         # Add buttons to the navigator toolbar to navigate to previous and next image
@@ -365,14 +332,12 @@ class MainApp(QMainWindow):
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMinimumWidth(self.width())
         self.progress_bar.setFixedHeight(5)
-        progress_color = QColor(get_theme("dark_blue.xml")['primaryColor'])
-        progress_color.setAlpha(100)
-        self.progress_bar.setStyleSheet(
-            f"""QProgressBar::chunk {{background: {progress_color.name(QColor.NameFormat.HexArgb)};}}""")
+        self.set_progress_bar_colors()
         # add the progress bar to the status bar at the bottom of the window
         self.statusBar().addPermanentWidget(self.progress_bar)
         percent_viewed = 100 * len([value for value in self.viewed_values.values() if value]) / len(self.file_list)
         self.update_progress_bar(percent_viewed)
+        self.change_theme(self.settings.value("theme", "dark_blue.xml"))
 
         QTimer.singleShot(0, self.set_items_on_initial_size)
 
@@ -399,7 +364,7 @@ class MainApp(QMainWindow):
         window_width = self.width() - labelling_toolbar_width - 100
         window_aspect_ratio = window_width / window_height
 
-        if (window_aspect_ratio > 1 and image_aspect_ratio > 1) or (window_aspect_ratio < 1 and image_aspect_ratio < 1):
+        if (window_aspect_ratio >= 1 and image_aspect_ratio >= 1) or (window_aspect_ratio < 1 and image_aspect_ratio < 1):
             # Both the window and the image are landscape, or both are portrait
             layout = QHBoxLayout()
         else:
@@ -437,15 +402,15 @@ class MainApp(QMainWindow):
         Initiate connections between buttons / sliders and their functions
         """
         self.connection_manager.connect(self.textbox.textChanged, self.on_text_changed)
-        self.connection_manager.connect(self.invert_action.triggered, self.invert_colours)
+        # self.connection_manager.connect(self.invert_action.triggered, self.invert_colours)
         self.connection_manager.connect(self.rotate_left_action.triggered, self.rotate_image_left)
         self.connection_manager.connect(self.rotate_right_action.triggered, self.rotate_image_right)
         self.connection_manager.connect(self.zoom_in_action.triggered, self.zoom_in)
         self.connection_manager.connect(self.zoom_out_action.triggered, self.zoom_out)
-        self.connection_manager.connect(self.reset_window_action.triggered, self.reset_window_sliders)
-        self.connection_manager.connect(self.auto_window_action.triggered, self.auto_window_sliders)
-        self.connection_manager.connect(self.window_center_slider.valueChanged, self.update_image)
-        self.connection_manager.connect(self.window_width_slider.valueChanged, self.update_image)
+        # self.connection_manager.connect(self.reset_window_action.triggered, self.reset_window_sliders)
+        # self.connection_manager.connect(self.auto_window_action.triggered, self.auto_window_sliders)
+        # self.connection_manager.connect(self.window_center_slider.valueChanged, self.update_image)
+        # self.connection_manager.connect(self.window_width_slider.valueChanged, self.update_image)
         self.connection_manager.connect(self.nextAction.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.prevAction.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.prevAction.triggered, self.previous_image)
@@ -600,16 +565,22 @@ class MainApp(QMainWindow):
         """
         Inverts the colors of the image.
         """
+        print("HERE!")
+        print(self.image)
         for i, image in enumerate([self.image, self.reference_image]):
             if image is not None:
                 # Invert the image
                 inverted_image = image.copy()
-                inverted_image[..., :3] = 255 - image[..., :3]
+                if image.ndim == 2:
+                    inverted_image = 255 - image
+                else:
+                    inverted_image[..., :3] = 255 - image[..., :3]
 
                 # Update the QPixmap
                 qimage = array2qimage(inverted_image)
                 pixmap = QPixmap.fromImage(qimage)
                 if i == 0:
+                    print(image)
                     self.pixmap_item.setPixmap(pixmap)
                     self.image = inverted_image
                 else:
@@ -710,6 +681,8 @@ class MainApp(QMainWindow):
             image = ds.pixel_array
             image = apply_modality_lut(image, ds)
             image = apply_voi_lut(image.astype(int), ds, 0)
+            if ds.PhotometricInterpretation == "MONOCHROME1":
+                image = invert_grayscale(image)
             # Convert the pixel array to an 8-bit integer array
             #############################
             # TODO: Check if we want this
@@ -1424,8 +1397,12 @@ class MainApp(QMainWindow):
         """
         Initializes the menus.
         """
-        image_actions = [self.invert_action, self.rotate_left_action, self.rotate_right_action, self.zoom_in_action,
-                         self.zoom_out_action, self.reset_window_action, self.auto_window_action]
+        image_actions = [
+            # self.invert_action,
+            self.rotate_left_action, self.rotate_right_action, self.zoom_in_action, self.zoom_out_action,
+            # self.reset_window_action, self.auto_window_action
+        ]
+
         nav_actions = [self.prevAction, self.nextAction, self.goToAction]
 
         # create the help menu
@@ -1459,15 +1436,163 @@ class MainApp(QMainWindow):
             navigation_menu.addAction(action)
             help_menu.addAction(action)
 
+        # Style menu
+        style_menu = QMenu("&Theme", self)
+
+        self.themes = [
+            'dark_blue.xml',
+            'dark_amber.xml',
+            'dark_cyan.xml',
+            'dark_lightgreen.xml',
+            'dark_medical.xml',
+            'dark_pink.xml',
+            'dark_purple.xml',
+            'dark_red.xml',
+            'dark_teal.xml',
+            'dark_yellow.xml',
+            'light_blue.xml',
+            'light_amber.xml',
+            'light_cyan.xml',
+            'light_lightgreen.xml',
+            'light_orange.xml',
+            'light_pink.xml',
+            'light_purple.xml',
+            'light_red.xml',
+            'light_teal.xml',
+            'light_yellow.xml',
+        ]
+
+        self.reset_theme_action = QAction("Default Theme", self)
+        self.connection_manager.connect(self.reset_theme_action.triggered,
+                                        partial(self.change_theme, "dark_blue.xml"))
+        style_menu.addAction(self.reset_theme_action)
+        help_menu.addAction(self.reset_theme_action)
+        style_menu.addSeparator()
+
+        self.theme_actions = {}
+        added_separator = False
+        for theme in self.themes:
+            if "light_" in theme and not added_separator:
+                style_menu.addSeparator()
+                added_separator = True
+            self.theme_actions[theme] = QAction(theme.replace("_", " ").replace(".xml", "").title(), self)
+            self.connection_manager.connect(self.theme_actions[theme].triggered,
+                                            partial(self.change_theme, theme))
+            style_menu.addAction(self.theme_actions[theme])
+
         # add the menus to the menu bar
         menu_bar = QMenuBar(self)
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(image_menu)
         menu_bar.addMenu(navigation_menu)
+        menu_bar.addMenu(style_menu)
         menu_bar.addMenu(help_menu)
         self.setMenuBar(menu_bar)
 
         self.connection_manager.connect(menu_save_as_action.triggered, self.save_as)
+
+    def change_theme(self, theme):
+        """
+        Changes the theme of the application.
+
+        :param theme: The theme to change to
+        :type theme: str
+        """
+
+        apply_stylesheet(self.app, theme=theme)
+        self.settings.setValue("theme", theme)
+
+        self.image_view.change_label_color(theme)
+        self.reference_view.change_label_color(theme)
+        self.set_scroll_bar_colors()
+        self.set_icons()
+        self.set_action_icons()
+        try:
+            self.line_color = get_theme(theme)['secondaryLightColor']
+        except KeyError:
+            self.line_color = get_theme(theme)['secondaryColor']
+        self.nav_spacer.setStyleSheet(f"border-bottom: 1px solid {self.line_color};")
+        self.nav_spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    def set_icons(self):
+        """
+        Sets the icons for the application and their colors.
+        """
+        try:
+            icon_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryLightColor']
+        except KeyError:
+            icon_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor']
+        self.icons = {
+            'save': qta.icon("mdi.content-save-all", color=icon_color),
+            'save_as': qta.icon("mdi.content-save-edit", color=icon_color),
+            'next': qta.icon("mdi.arrow-right-circle", color=icon_color),
+            'prev': qta.icon("mdi.arrow-left-circle", color=icon_color),
+            'goto': qta.icon("mdi.file-find", color=icon_color),
+            'ww': qta.icon("mdi.contrast-box", color=icon_color),
+            'wc': qta.icon("mdi.brightness-5", color=icon_color),
+            'inv': qta.icon("mdi.invert-colors", color=icon_color),
+            'rot_right': qta.icon("mdi.rotate-right", color=icon_color),
+            'rot_left': qta.icon("mdi.rotate-left", color=icon_color),
+            'zoom_in': qta.icon("mdi.magnify-plus", color=icon_color),
+            'zoom_out': qta.icon("mdi.magnify-minus", color=icon_color),
+            'exit': qta.icon("mdi.exit-to-app", color=icon_color),
+            'reset_win': qta.icon("mdi.credit-card-refresh", color=icon_color),
+            'auto_win': qta.icon("mdi.image-auto-adjust", color=icon_color),
+            'viewed': qta.icon("mdi.checkbox-marked-circle", color="green", scale=2),
+            'not_viewed': qta.icon("mdi.close-circle", color="red", scale=2),
+            'question': qta.icon("mdi.help-circle", color="white", scale=2)
+        }
+
+    def set_action_icons(self):
+        """
+        Sets the icons for the actions in the application.
+        """
+        self.exitAction.setIcon(self.icons['exit'])
+        self.goToAction.setIcon(self.icons['goto'])
+        self.saveAction.setIcon(self.icons['save'])
+        self.exitAction.setIcon(self.icons['exit'])
+        self.nextAction.setIcon(self.icons['next'])
+        self.prevAction.setIcon(self.icons['prev'])
+        # self.reset_window_action.setIcon(self.icons['reset_win'])
+        # self.auto_window_action.setIcon(self.icons['auto_win'])
+        self.rotate_left_action.setIcon(self.icons['rot_left'])
+        self.rotate_right_action.setIcon(self.icons['rot_right'])
+        self.zoom_in_action.setIcon(self.icons['zoom_in'])
+        self.zoom_out_action.setIcon(self.icons['zoom_out'])
+        # self.invert_action.setIcon(self.icons['inv'])
+        # self.window_width_action.setIcon(self.icons['ww'])
+        # self.window_center_action.setIcon(self.icons['wc'])
+
+    def set_scroll_bar_colors(self):
+        """
+        Sets the colors of the scroll bars in the image views.
+        """
+        # Set scrollbar style (too dark with qt material dark theme...)
+        self.image_view.setStyleSheet(f"""
+            QScrollBar::handle:vertical {{
+                background: {get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor']};
+                }}
+            QScrollBar::handle:horizontal {{
+                background: {get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor']};
+                }}
+        """)
+        self.reference_view.setStyleSheet(f"""
+                    QScrollBar::handle:vertical {{
+                        background: {get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor']};
+                        }}
+                    QScrollBar::handle:horizontal {{
+                        background: {get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor']};
+                        }}
+                """)
+
+    def set_progress_bar_colors(self):
+        """
+        Sets the color of the progress bar.
+        """
+        progress_color = QColor(get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor'])
+        progress_color.setAlpha(100)
+        self.progress_bar.setStyleSheet(
+            f"""QProgressBar::chunk {{background: {progress_color.name(QColor.NameFormat.HexArgb)};}}""")
 
     def show_about(self):
         """
@@ -1485,3 +1610,7 @@ class MainApp(QMainWindow):
         self.image_view.connection_manager.disconnect_all()
         self.reference_view.connection_manager.disconnect_all()
         QApplication.quit()
+
+
+def invert_grayscale(image):
+    return np.max(image) + np.min(image) - image

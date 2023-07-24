@@ -271,13 +271,13 @@ class ConfigurationWizard(QWizard):
 
         self.setStyleSheet(f"""
             QLineEdit {{
-                color: {get_theme('dark_blue.xml')['primaryLightColor']};
+                color: {get_theme(self.settings.value('theme', 'dark_blue.xml'))['primaryLightColor']};
             }}
             QSpinBox {{
-                color: {get_theme('dark_blue.xml')['primaryLightColor']};
+                color: {get_theme(self.settings.value('theme', 'dark_blue.xml'))['primaryLightColor']};
             }}
             QComboBox {{
-                color: {get_theme('dark_blue.xml')['primaryLightColor']};
+                color: {get_theme(self.settings.value('theme', 'dark_blue.xml'))['primaryLightColor']};
             }}
         """)
 
@@ -333,8 +333,10 @@ class ConfigurationWizard(QWizard):
         # Set up the wizard
         # self.addPage(self.options_page)
         # self.addPage(self.label_page)
-        for i in range(self.nradio_pages):
-            self.addPage(self.radio_pages[i])
+
+        ## UNCOMMENT THIS TO ADD/CHANGE RADIO BUTTONS
+        # for i in range(self.nradio_pages):
+        #     self.addPage(self.radio_pages[i])
         self.addPage(self.backup_page)
         self.addPage(self.save_page)
 
@@ -622,7 +624,7 @@ class ConfigurationWizard(QWizard):
         """
         if self.config_files_combobox.isEnabled():
             self.config_files_combobox.setStyleSheet(f"""QComboBox {{
-                color: {get_theme('dark_blue.xml')['primaryLightColor']};
+                color: {get_theme(self.settings.value('theme', 'dark_blue.xml'))['primaryLightColor']};
             }}""")
         else:
             self.config_files_combobox.setStyleSheet("QComboBox { color: gray; }")

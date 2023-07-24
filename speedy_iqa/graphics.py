@@ -10,9 +10,8 @@ Classes:
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
-from typing import Optional, Dict, List
+from typing import Optional
 from speedy_iqa.utils import ConnectionManager
-import math
 from qt_material import get_theme
 
 
@@ -51,7 +50,6 @@ class CustomGraphicsView(QGraphicsView):
         self.start_rect = None
         self.current_finding = None
         self.current_color = None
-        self.label = label
         # self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
         self.touch_points = []
@@ -83,3 +81,22 @@ class CustomGraphicsView(QGraphicsView):
         if self.scene() and self.scene().items():
             self.fitInView(self.scene().items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
             self.scale(self.zoom, self.zoom)
+
+    def change_label_color(self, theme: str):
+        """
+        Change the color of the label.
+        """
+        try:
+            primary_light_color = get_theme(theme)['primaryLightColor']
+        except KeyError:
+            primary_light_color = get_theme(theme)['primaryColor']
+
+        try:
+            secondary_dark_color = get_theme(theme)['secondaryDarkColor']
+        except KeyError:
+            secondary_dark_color = get_theme(theme)['secondaryColor']
+
+        self.label.setStyleSheet(
+            f"background-color: {primary_light_color}; margin: 3px; padding: 3px; font-size: 16px; font-weight: bold; "
+            f"color: {secondary_dark_color};"
+        )

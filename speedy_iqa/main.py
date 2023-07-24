@@ -41,7 +41,7 @@ else:
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 
-def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawesome'):
+def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
     """
     Main function. Creates the main window and runs the application.
 
@@ -105,15 +105,17 @@ def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawes
     # Create the application
     app = QApplication(sys.argv)
 
+    settings = QSettings('SpeedyIQA', 'ImageViewer')
+
     # Set the application theme
     if theme == 'qt_material':
-        apply_stylesheet(app, theme=material_theme)
+        if material_theme is None:
+            material_theme = settings.value('theme', 'dark_blue.xml')
+        else:
+            settings.setValue('theme', material_theme)
+        apply_stylesheet(app, theme=material_theme, extra={})
     else:
         app.setStyle(QStyleFactory.create(theme))
-
-    font = app.font()
-    font.setPointSize(18)
-    app.setFont(font)
 
     # Set the application icon theme
     QIcon.setThemeName(icon_theme)
@@ -125,8 +127,6 @@ def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawes
     print("main", config_file)
     load_msg_box.save_last_config(config_file)
 
-    settings = QSettings('SpeedyIQA', 'ImageViewer')
-
     # User selects to `Ok` -> load the load dialog box
     if result == load_msg_box.DialogCode.Accepted:
         # If the user selects to `Ok`, load the dialog to select the dicom directory
@@ -135,7 +135,7 @@ def main(theme='qt_material', material_theme='dark_blue.xml', icon_theme='qtawes
 
         if result == setup_window.DialogCode.Accepted:
             # Create the main window and pass the dicom directory
-            window = MainApp(settings)
+            window = MainApp(app, settings)
             window.show()
         else:
             cleanup()
