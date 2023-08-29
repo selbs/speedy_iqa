@@ -1,6 +1,6 @@
-backup_dir: /Users/ianselby/speedy_iqa/backups
+backup_dir: ~/speedy_iqa/backups
 backup_interval: 5
-log_dir: /Users/ianselby/speedy_iqa/logs
+log_dir: ~/speedy_iqa/logs
 max_backups: 10
 radiobuttons_page1:
 - labels:
