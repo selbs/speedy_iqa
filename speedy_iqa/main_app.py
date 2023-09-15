@@ -43,7 +43,7 @@ else:
 outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
 config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
 config = open_yml_file(os.path.join(resource_dir, config_file))
-logger, console_msg = setup_logging(config['log_dir'])
+logger, console_msg = setup_logging(config['log_dir'], resource_dir)
 
 
 class MainApp(QMainWindow):

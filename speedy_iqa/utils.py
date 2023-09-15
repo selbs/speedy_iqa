@@ -37,8 +37,10 @@ if hasattr(sys, '_MEIPASS'):
 elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
-else:
+elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa'):
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
+else:
+    raise(FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
 
 
 class Connection:
@@ -151,18 +153,20 @@ def open_yml_file(config_path: str) -> Dict:
     return config_data
 
 
-def setup_logging(log_out_path: str) -> Tuple[logging.Logger, logging.Logger]:
+def setup_logging(log_out_path: str, resource_directory: str = resource_dir) -> Tuple[logging.Logger, logging.Logger]:
     """
     Sets up the logging for the application. The log file will be saved in the log_out_path in the directory
     specified in the chosen config .yml file.
 
     :param log_out_path: str, the path to the directory where the log file will be saved.
+    :param resource_directory: str, the path to the resource directory.
     :return: tuple (logger, console_msg), where logger is a configured logging.Logger instance, and console_msg is a
              reference to the same logger to be used for console messaging.
     """
     full_log_file_path = os.path.expanduser(os.path.join(log_out_path, "speedy_iqa.log"))
     os.makedirs(os.path.dirname(full_log_file_path), exist_ok=True)
-    logging.config.fileConfig(os.path.join(resource_dir, 'log.conf'), defaults={'log_file_path': full_log_file_path})
+    logging.config.fileConfig(os.path.join(resource_directory, 'log.conf'),
+                              defaults={'log_file_path': full_log_file_path})
     logger = logging.getLogger(__name__)
     console_msg = logging.getLogger(__name__)
     return logger, console_msg
