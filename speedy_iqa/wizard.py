@@ -27,6 +27,8 @@ from speedy_iqa.utils import open_yml_file, setup_logging, ConnectionManager
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
     resource_dir = sys._MEIPASS
+elif 'main.py' in os.listdir(os.path.dirname(os.path.realpath(__file__))):
+    resource_dir = os.path.dirname(os.path.realpath(__file__))
 elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
@@ -35,7 +37,7 @@ elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'sp
 elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa'):
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa')
 else:
-    raise (FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
+    raise(FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
 
 
 class RadioButtonPage(QWizardPage):

@@ -34,6 +34,8 @@ from PIL import Image
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
     resource_dir = sys._MEIPASS
+elif 'main.py' in os.listdir(os.path.dirname(os.path.realpath(__file__))):
+    resource_dir = os.path.dirname(os.path.realpath(__file__))
 elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
