@@ -663,7 +663,8 @@ class MainApp(QMainWindow):
             reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
         else:
             reference_name = os.path.splitext(self.file_list[self.current_index])[0]
-        reference_name = reference_name + img_extension
+        if not reference_name.endswith(img_extension):
+            reference_name = reference_name + img_extension
         reference_path = os.path.join(self.reference_dir_path, reference_name)
 
         try:
