@@ -692,6 +692,8 @@ class SetupWindow(QDialog):
 
             # Update label and save file path
             if folder_path:
+                if os.path.isfile(folder_path):
+                    folder_path = os.path.dirname(folder_path)
                 img_files = [f for f in os.listdir(folder_path) if f.endswith((
                     '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
                 ))]

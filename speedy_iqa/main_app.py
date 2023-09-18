@@ -107,6 +107,11 @@ class MainApp(QMainWindow):
         self.loaded = self.load_from_json()
         if not self.loaded:
             self.dir_path = self.settings.value("image_path", ".")
+            if not os.path.isdir(self.dir_path):
+                if os.path.isdir(os.path.dirname(self.dir_path)):
+                    self.dir_path = os.path.dirname(self.dir_path)
+                else:
+                    raise FileNotFoundError(f"Directory {self.dir_path} not found, nor was the parent directory found.")
             self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith((
                 '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
             ))])
