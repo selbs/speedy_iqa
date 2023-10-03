@@ -123,12 +123,11 @@ class MainApp(QMainWindow):
             # self.reference_delimiter = self.settings.value("reference_delimiter", "__")
 
             imgs_wout_ref = self.check_no_of_images_wout_ref()
-            self.quit_due_to_no_ref = False
+            self.should_quit = False
 
             if imgs_wout_ref:
-                # QTimer.singleShot(0, lambda: self.show_imgs_wout_ref_warning(imgs_wout_ref))
                 self.show_imgs_wout_ref_warning(imgs_wout_ref)
-            if self.quit_due_to_no_ref:
+            if self.should_quit:
                 return
 
             self.viewed_values = {f: False for f in self.file_list}
@@ -190,6 +189,8 @@ class MainApp(QMainWindow):
         self.pixmap_item = QGraphicsPixmapItem()
         self.reference_pixmap_item = QGraphicsPixmapItem()
         self.load_file()
+        if self.should_quit:
+            return
         self.load_image()
         self.image_scene.addItem(self.pixmap_item)
         self.reference_scene.addItem(self.reference_pixmap_item)
@@ -691,8 +692,24 @@ class MainApp(QMainWindow):
             self.reference_image = self.read_file(reference_path, img_extension)
         except Exception as e:
             # TODO: Could add a quit button here - else could end in never ending loop of 'okays'
-            QMessageBox.critical(self, "Error", f"Failed to load file:\n{str(e)}", QMessageBox.StandardButton.Ok,
-                                 defaultButton=QMessageBox.StandardButton.Ok)
+            # QMessageBox.critical(self, "Error", f"Failed to load file:\n{str(e)}",
+            #                      QMessageBox.StandardButton.Ok,
+            #                      defaultButton=QMessageBox.StandardButton.Ok)
+
+            img_load_error_msg_box = QMessageBox(self)
+            img_load_error_msg_box.setIcon(QMessageBox.Icon.Critical)
+            img_load_error_msg_box.setWindowTitle("Error")
+            img_load_error_msg_box.setText(f"Failed to load file:\n{str(e)}")
+            ok_button = img_load_error_msg_box.addButton('Try Next Image', QMessageBox.ButtonRole.AcceptRole)
+            quit_button = img_load_error_msg_box.addButton('Quit', QMessageBox.ButtonRole.RejectRole)
+
+            img_load_error_msg_box.exec()
+
+            if img_load_error_msg_box.clickedButton() == quit_button:
+                self.quit_app()
+                self.should_quit = "failed_to_load"
+                return
+
             self.next_image(prev_failed=True)
             logger.exception(f"Failed to load file: {img_path} - Message: {str(e)}")
 
@@ -745,7 +762,7 @@ class MainApp(QMainWindow):
         msg_box.exec()
 
         if msg_box.clickedButton() == quit_button:
-            self.quit_due_to_no_ref = True
+            self.should_quit = "no_ref"
 
     @staticmethod
     def read_file(file_path: str, file_extension: str):
@@ -968,12 +985,25 @@ class MainApp(QMainWindow):
 
         radiobutton_heading = QLabel(self)
         radiobutton_heading.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        radiobutton_heading.setText(f"For {self.task}, please rate the image quality "
-                                    f"relative to the reference:".upper())
+        radiobutton_heading.setText(f"For {self.task}, please rate the image quality in comparison to the reference (left):".upper())
         radiobutton_heading.setWordWrap(True)
         radiobutton_heading.setStyleSheet("QLabel { margin-right: 10px; }")
         radiobutton_heading.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(radiobutton_heading)
+
+        h_text_layout1 = QHBoxLayout()
+        instructions1 = QLabel(self)
+        instructions1.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        instructions1.setText("1 = VERY POOR  /  4 = VERY GOOD")
+        instructions1.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+        # self.page1_layout.addWidget(instructions1)
+        h_text_layout1.addWidget(instructions1)
+        page_label1 = QLabel(self)
+        page_label1.setAlignment(Qt.AlignmentFlag.AlignRight)
+        page_label1.setText("1/2")
+        page_label1.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+        h_text_layout1.addWidget(page_label1)
+        self.page1_layout.addLayout(h_text_layout1)
 
         if self.radiobutton_groups1 is not None:
             radiobutton_widget1 = QWidget()
@@ -994,12 +1024,6 @@ class MainApp(QMainWindow):
             # Add the scroll area to the page layout
             self.page1_layout.addWidget(scroll1)
 
-        instructions1 = QLabel(self)
-        instructions1.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        instructions1.setText("1 = VERY POOR  /  4 = VERY GOOD")
-        instructions1.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-        self.page1_layout.addWidget(instructions1)
-
         # spacer4 = QWidget()
         # spacer4.setMinimumHeight(0)
         # spacer4.setMaximumHeight(10)
@@ -1011,6 +1035,20 @@ class MainApp(QMainWindow):
         self.page1_layout.addWidget(button)
         self.page1.setLayout(self.page1_layout)
         self.page1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        h_text_layout2 = QHBoxLayout()
+        instructions2 = QLabel(self)
+        instructions2.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
+        instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+        # self.page2_layout.addWidget(instructions2)
+        h_text_layout2.addWidget(instructions2)
+        page_label2 = QLabel(self)
+        page_label2.setAlignment(Qt.AlignmentFlag.AlignRight)
+        page_label2.setText("2/2")
+        page_label2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+        h_text_layout2.addWidget(page_label2)
+        self.page2_layout.addLayout(h_text_layout2)
 
         if self.radiobutton_groups2 is not None:
             radiobutton_widget2 = QWidget()
@@ -1031,11 +1069,11 @@ class MainApp(QMainWindow):
             # # Add the scroll area to the page layout
             self.page2_layout.addWidget(scroll2)
 
-        instructions2 = QLabel(self)
-        instructions2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
-        instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-        self.page2_layout.addWidget(instructions2)
+        # instructions2 = QLabel(self)
+        # instructions2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        # instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
+        # instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+        # self.page2_layout.addWidget(instructions2)
 
         button = QPushButton('Back', clicked=self.show_page1)
         button.setStyleSheet("font-size: 14px;")
@@ -1467,7 +1505,7 @@ class MainApp(QMainWindow):
         """
         # Ask the user if they want to save before closing
 
-        if self.quit_due_to_no_ref:
+        if self.should_quit == "no_ref":
             event.accept()
             return
 

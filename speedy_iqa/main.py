@@ -142,7 +142,11 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
         if result == setup_window.DialogCode.Accepted:
             # Create the main window and pass the dicom directory
             window = MainApp(app, settings)
-            window.show()
+            if not window.should_quit:
+                window.show()
+            else:
+                cleanup()
+                sys.exit()
         else:
             cleanup()
             sys.exit()

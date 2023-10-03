@@ -258,7 +258,7 @@ class LoadMessageBox(QDialog):
         config_layout.addWidget(config_label)
         config_layout.addWidget(self.config_combo)
         right_layout.addLayout(config_layout)
-        config_label2 = QLabel("N.B. the config file can be edited in the Config. Wizard.")
+        config_label2 = QLabel("N.B. the config file can be edited in the Settings.")
         config_label2.setStyleSheet("font-size: 14px; font-style: italic;")
         config_layout.addWidget(config_label2)
 
@@ -278,7 +278,7 @@ class LoadMessageBox(QDialog):
         hbox = QHBoxLayout()
 
         # Add a QPushButton for "Configuration Wizard"
-        config_wizard_button = QPushButton("Config. Wizard")
+        config_wizard_button = QPushButton("Settings")
         self.connection_manager.connect(config_wizard_button.clicked, self.on_wizard_button_clicked)
         hbox.addWidget(config_wizard_button)
 
