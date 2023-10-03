@@ -26,6 +26,7 @@ import sys
 from math import ceil
 import imageio as iio
 from functools import partial
+from random import Random
 
 from speedy_iqa.windows import AboutMessageBox, FileSelectionDialog
 from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale, convert_to_checkstate
@@ -50,7 +51,6 @@ outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
 config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
 config = open_yml_file(os.path.join(resource_dir, config_file))
 logger, console_msg = setup_logging(os.path.expanduser(config['log_dir']), resource_dir)
-
 
 class MainApp(QMainWindow):
     """
@@ -112,9 +112,11 @@ class MainApp(QMainWindow):
                     self.dir_path = os.path.dirname(self.dir_path)
                 else:
                     raise FileNotFoundError(f"Directory {self.dir_path} not found, nor was the parent directory found.")
+
             self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith((
                 '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
             ))])
+            Random(4).shuffle(self.file_list)
             self.reference_dir_path = self.settings.value("reference_path", ".")
             # self.reference_delimiter = self.settings.value("reference_delimiter", "__")
             self.viewed_values = {f: False for f in self.file_list}
