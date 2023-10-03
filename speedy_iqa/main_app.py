@@ -53,6 +53,12 @@ config_file = outer_setting.value("last_config_file", os.path.join(resource_dir,
 config = open_yml_file(os.path.join(resource_dir, config_file))
 logger, console_msg = setup_logging(os.path.expanduser(config['log_dir']), resource_dir)
 
+class ClickableWidget(QWidget):
+    clicked = pyqtSignal()
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.clicked.emit()
+
 class MainApp(QMainWindow):
     """
     Main window of the application.
@@ -218,12 +224,20 @@ class MainApp(QMainWindow):
                 (y_pad, size - height - y_pad), (x_pad, size - width - x_pad), (0, 0)
         ], mode='constant', constant_values=0)
         logo_pixmap = QPixmap(array2qimage(padded_logo))
-        self.logoAction = QAction(QIcon(logo_pixmap), "&About", self)
+        self.logoAction = QAction(QIcon(logo_pixmap), "About", self)
         self.file_tool_bar.addAction(self.logoAction)
         # Create exit and save action buttons
-        self.exitAction = QAction(self.icons['exit'], "&Exit", self)
+        self.exitAction = QAction(self.icons['exit'], "Exit", self)
+        self.exitAction.setShortcuts([
+            QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Q),
+            QKeySequence.StandardKey.Quit
+        ])
         self.file_tool_bar.addAction(self.exitAction)
-        self.saveAction = QAction(self.icons['save'], "&Save", self)
+        self.saveAction = QAction(self.icons['save'], "Save", self)
+        self.saveAction.setShortcuts([
+            Qt.Key.Key_S,
+            QKeySequence.StandardKey.Save
+        ])
         self.file_tool_bar.addAction(self.saveAction)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.file_tool_bar)
 
@@ -232,7 +246,7 @@ class MainApp(QMainWindow):
         self.viewed_label = QLabel(self)
         self.viewed_icon = QLabel(self)
 
-        for page in [1,2]:
+        for page in [1, 2]:
             self.radiobuttons[page] = {}
             self.radiobuttons_boxes[page] = {}
         if bool(self.findings):
@@ -258,13 +272,17 @@ class MainApp(QMainWindow):
         # self.invert_action = QAction(self.icons['inv'], "Invert", self)
         # self.image_toolbar.addAction(self.invert_action)
         self.rotate_left_action = QAction(self.icons['rot_left'], "Rotate 90° Left", self)
+        self.rotate_left_action.setShortcut(Qt.Key.Key_L)
         self.image_toolbar.addAction(self.rotate_left_action)
         self.rotate_right_action = QAction(self.icons['rot_right'], "Rotate 90° Right", self)
+        self.rotate_right_action.setShortcut(Qt.Key.Key_R)
         self.image_toolbar.addAction(self.rotate_right_action)
 
         # Create zoom buttons
         self.zoom_in_action = QAction(self.icons['zoom_in'], "Zoom In", self)
+        self.zoom_in_action.setShortcuts([Qt.Key.Key_Plus, Qt.Key.Key_Equal])
         self.zoom_out_action = QAction(self.icons['zoom_out'], "Zoom Out", self)
+        self.zoom_out_action.setShortcuts([Qt.Key.Key_Minus, Qt.Key.Key_Underscore])
         self.image_toolbar.addAction(self.zoom_in_action)
         self.image_toolbar.addAction(self.zoom_out_action)
 
@@ -315,24 +333,63 @@ class MainApp(QMainWindow):
         self.nav_toolbar.setMovable(False)
         self.nav_toolbar.addSeparator()
         # Add buttons to the navigator toolbar to navigate to previous and next image
-        self.prevAction = QAction(self.icons['prev'], "&Back", self)
-        self.goToAction = QAction(self.icons['goto'], "&Go To Image...", self)
-        self.nextAction = QAction(self.icons['next'], "&Next", self)
+        self.prevAction = QAction(self.icons['prev'], "Previous Image", self)
+        self.prevAction.setShortcuts([
+            Qt.Key.Key_Left,
+            Qt.Key.Key_B,
+            Qt.Key.Key_Back,
+            Qt.Key.Key_Backspace
+        ])
+        self.goToAction = QAction(self.icons['goto'], "Go To Image...", self)
+        self.goToAction.setShortcuts([
+            QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_F),
+            QKeySequence.StandardKey.Open
+        ])
+        self.nextAction = QAction(self.icons['next'], "Next Unviewed Image", self)
+        self.nextAction.setShortcuts([
+            Qt.Key.Key_Right,
+            Qt.Key.Key_Space,
+            Qt.Key.Key_N
+        ])
+
         action_width = self.labelling_toolbar.sizeHint().width() // 3
+
+        try:
+            nav_bg_color1 = get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryLightColor']
+        except KeyError:
+            nav_bg_color1 = get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor']
+        try:
+            nav_bg_color2 = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryLightColor']
+        except KeyError:
+            nav_bg_color2 = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryColor']
 
         self.prevButton = QToolButton()
         self.prevButton.setDefaultAction(self.prevAction)
         self.prevButton.setFixedWidth(action_width)
+        # self.prevButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.prevButton.setStyleSheet(f"""
+                    QToolButton {{background-color: {nav_bg_color1}; border: none; border-radius: 5px;}}
+                    QToolButton:hover {{border: none; border-radius: 5px; background-color: {nav_bg_color2};}}
+                """)
         self.nav_toolbar.addWidget(self.prevButton)
 
         self.goToButton = QToolButton()
         self.goToButton.setDefaultAction(self.goToAction)
         self.goToButton.setFixedWidth(action_width)
+        self.goToButton.setStyleSheet(f"""
+                    QToolButton {{border: none; border-radius: 5px;}}
+                    QToolButton:hover {{border: none; border-radius: 5px;}}
+                """)
         self.nav_toolbar.addWidget(self.goToButton)
 
         self.nextButton = QToolButton()
         self.nextButton.setDefaultAction(self.nextAction)
         self.nextButton.setFixedWidth(action_width)
+        # self.nextButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.nextButton.setStyleSheet(f"""
+            QToolButton {{background-color: {nav_bg_color1}; border: none; border-radius: 5px;}}
+            QToolButton:hover {{border: none; border-radius: 5px; background-color: {nav_bg_color2};}}
+        """)
         self.nav_toolbar.addWidget(self.nextButton)
 
         self.nav_toolbar.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -1322,38 +1379,38 @@ class MainApp(QMainWindow):
             print(cbox, checkbox_value)
             self.checkboxes[cbox].setCheckState(convert_to_checkstate(checkbox_value))
 
-    def keyPressEvent(self, event: QKeyEvent):
-        """
-        Handles key presses as shortcuts.
-
-        :param event: The key press event
-        :type event: QKeyEvent
-        """
-        # Set up shortcuts
-        # if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
-        if event.key() == Qt.Key.Key_B:
-            self.previous_image()
-        elif event.key() == Qt.Key.Key_N:
-            self.next_image()
-        elif event.key() == Qt.Key.Key_Space:
-            self.next_image()
-        elif event.key() == Qt.Key.Key_Minus or event.key() == Qt.Key.Key_Underscore:
-            self.zoom_out()
-        elif event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
-            self.zoom_in()
-        # elif event.key() == Qt.Key.Key_I:
-        #     self.invert_colours()
-        elif event.key() == Qt.Key.Key_R:
-            self.rotate_image_right()
-        elif event.key() == Qt.Key.Key_L:
-            self.rotate_image_left()
-        elif event.key() == Qt.Key.Key_S:
-            self.save_to_json()
-        elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
-            if event.key() == Qt.Key.Key_Q:
-                self.quit_app()
-        else:
-            super().keyPressEvent(event)
+    # def keyPressEvent(self, event: QKeyEvent):
+    #     """
+    #     Handles key presses as shortcuts.
+    #
+    #     :param event: The key press event
+    #     :type event: QKeyEvent
+    #     """
+    #     # Set up shortcuts
+    #     # if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+    #     if event.key() == Qt.Key.Key_B:
+    #         self.previous_image()
+    #     elif event.key() == Qt.Key.Key_N:
+    #         self.next_image()
+    #     elif event.key() == Qt.Key.Key_Space:
+    #         self.next_image()
+    #     elif event.key() == Qt.Key.Key_Minus or event.key() == Qt.Key.Key_Underscore:
+    #         self.zoom_out()
+    #     elif event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
+    #         self.zoom_in()
+    #     elif event.key() == Qt.Key.Key_I:
+    #         self.invert_colours()
+    #     elif event.key() == Qt.Key.Key_R:
+    #         self.rotate_image_right()
+    #     elif event.key() == Qt.Key.Key_L:
+    #         self.rotate_image_left()
+    #     elif event.key() == Qt.Key.Key_S:
+    #         self.save_to_json()
+    #     elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+    #         if event.key() == Qt.Key.Key_Q:
+    #             self.quit_app()
+    #     else:
+    #         super().keyPressEvent(event)
 
     def save_settings(self):
         """
@@ -1569,6 +1626,10 @@ class MainApp(QMainWindow):
         # create the file menu
         file_menu = QMenu("&File", self)
         menu_save_as_action = QAction(self.icons['save_as'], "&Save As...", self)
+        menu_save_as_action.setShortcuts([
+            QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_S),
+            QKeySequence.StandardKey.Save
+        ])
         file_menu.addAction(self.saveAction)
         help_menu.addAction(self.saveAction)
         file_menu.addAction(menu_save_as_action)
@@ -1618,6 +1679,8 @@ class MainApp(QMainWindow):
         ]
 
         self.reset_theme_action = QAction("Default Theme", self)
+        self.reset_theme_action.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_T))
+
         self.connection_manager.connect(self.reset_theme_action.triggered,
                                         partial(self.change_theme, "dark_blue.xml"))
         style_menu.addAction(self.reset_theme_action)
@@ -1677,11 +1740,17 @@ class MainApp(QMainWindow):
             icon_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryLightColor']
         except KeyError:
             icon_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryColor']
+
+        try:
+            nav_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryColor']
+        except KeyError:
+            nav_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryDarkColor']
+
         self.icons = {
             'save': qta.icon("mdi.content-save-all", color=icon_color),
             'save_as': qta.icon("mdi.content-save-edit", color=icon_color),
-            'next': qta.icon("mdi.arrow-right-circle", color=icon_color),
-            'prev': qta.icon("mdi.arrow-left-circle", color=icon_color),
+            'next': qta.icon("mdi.arrow-right-circle", color=nav_color),
+            'prev': qta.icon("mdi.arrow-left-circle", color=nav_color),
             'goto': qta.icon("mdi.file-find", color=icon_color),
             'ww': qta.icon("mdi.contrast-box", color=icon_color),
             'wc': qta.icon("mdi.brightness-5", color=icon_color),
