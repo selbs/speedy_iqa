@@ -116,7 +116,7 @@ class MainApp(QMainWindow):
                 '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
             ))])
             self.reference_dir_path = self.settings.value("reference_path", ".")
-            self.reference_delimiter = self.settings.value("reference_delimiter", "__")
+            # self.reference_delimiter = self.settings.value("reference_delimiter", "__")
             self.viewed_values = {f: False for f in self.file_list}
             self.rotation = {f: 0 for f in self.file_list}
             self.notes = {f: "" for f in self.file_list}
@@ -659,10 +659,12 @@ class MainApp(QMainWindow):
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
 
-        if self.reference_delimiter:
-            reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
-        else:
-            reference_name = os.path.splitext(self.file_list[self.current_index])[0]
+        # if self.reference_delimiter:
+        #     reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+        # else:
+        #     reference_name = os.path.splitext(self.file_list[self.current_index])[0]
+
+        reference_name = os.path.splitext(self.file_list[self.current_index])[0]
         if not reference_name.endswith(img_extension):
             reference_name = reference_name + img_extension
         reference_path = os.path.join(self.reference_dir_path, reference_name)
@@ -1290,7 +1292,7 @@ class MainApp(QMainWindow):
         data = {
             'image_directory': self.dir_path,
             'reference_image_directory': self.reference_dir_path,
-            'reference_delimiter': self.reference_delimiter,
+            # 'reference_delimiter': self.reference_delimiter,
             'files': []
         }
         for filename in self.file_list:
@@ -1340,7 +1342,7 @@ class MainApp(QMainWindow):
             self.file_list = [entry['filename'] for entry in data['files']]
             self.dir_path = data['image_directory']
             self.reference_dir_path = data['reference_image_directory']
-            self.reference_delimiter = data['reference_delimiter']
+            # self.reference_delimiter = data['reference_delimiter']
 
             for entry in data['files']:
                 filename = entry['filename']

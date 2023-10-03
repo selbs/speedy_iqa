@@ -476,17 +476,17 @@ class SetupWindow(QDialog):
 
         dcm_layout.addSpacerItem(fixed_spacer)
 
-        delimiter_layout = QHBoxLayout()
-        delimiter_layout.addWidget(QLabel("Image Filename to Reference Filename Delimiter:"))
-        # reference_selection_layout.addSpacerItem(expanding_spacer)
-        fixed_15_spacer = QSpacerItem(15, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        delimiter_layout.addSpacerItem(fixed_15_spacer)
-        self.delimiter_line_edit = QLineEdit()
-        self.delimiter_line_edit.setFixedWidth(50)
-        self.delimiter_line_edit.setText(self.settings.value("reference_delimiter", "__"))
-        delimiter_layout.addWidget(self.delimiter_line_edit)
-        delimiter_layout.addSpacerItem(expanding_spacer)
-        dcm_layout.addLayout(delimiter_layout)
+        # delimiter_layout = QHBoxLayout()
+        # delimiter_layout.addWidget(QLabel("Image Filename to Reference Filename Delimiter:"))
+        # # reference_selection_layout.addSpacerItem(expanding_spacer)
+        # fixed_15_spacer = QSpacerItem(15, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        # delimiter_layout.addSpacerItem(fixed_15_spacer)
+        # self.delimiter_line_edit = QLineEdit()
+        # self.delimiter_line_edit.setFixedWidth(50)
+        # self.delimiter_line_edit.setText(self.settings.value("reference_delimiter", "__"))
+        # delimiter_layout.addWidget(self.delimiter_line_edit)
+        # delimiter_layout.addSpacerItem(expanding_spacer)
+        # dcm_layout.addLayout(delimiter_layout)
 
         layout.addLayout(dcm_layout)
 
@@ -528,15 +528,15 @@ class SetupWindow(QDialog):
         self.connection_manager.connect(self.folder_button.clicked, self.select_image_folder)
         self.connection_manager.connect(self.reference_folder_button.clicked, self.select_reference_folder)
         self.connection_manager.connect(self.new_json_tickbox.stateChanged, self.on_json_checkbox_changed)
-        self.connection_manager.connect(self.delimiter_line_edit.textChanged, self.on_delimiter_changed)
+        # self.connection_manager.connect(self.delimiter_line_edit.textChanged, self.on_delimiter_changed)
 
         # Load previously selected files
         self.load_saved_files(settings)
 
         QTimer.singleShot(0, self.on_json_checkbox_changed)
 
-    def on_delimiter_changed(self):
-        self.settings.setValue("reference_delimiter", self.delimiter_line_edit.text())
+    # def on_delimiter_changed(self):
+    #     self.settings.setValue("reference_delimiter", self.delimiter_line_edit.text())
 
     def on_accepted(self):
         """
@@ -582,8 +582,8 @@ class SetupWindow(QDialog):
             self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
             self.folder_button.setEnabled(True)
             self.reference_folder_button.setEnabled(True)
-            self.delimiter_line_edit.setEnabled(True)
-            self.delimiter_line_edit.setText(self.settings.value("reference_delimiter", "__"))
+            # self.delimiter_line_edit.setEnabled(True)
+            # self.delimiter_line_edit.setText(self.settings.value("reference_delimiter", "__"))
 
             if not self.check_json_compatibility(self.json_label.text()):
                 self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
@@ -598,7 +598,7 @@ class SetupWindow(QDialog):
             self.json_button.setEnabled(True)
             self.folder_button.setEnabled(False)
             self.reference_folder_button.setEnabled(False)
-            self.delimiter_line_edit.setEnabled(False)
+            # self.delimiter_line_edit.setEnabled(False)
 
     def load_saved_files(self, settings: QSettings):
         """
