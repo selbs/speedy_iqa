@@ -733,16 +733,18 @@ class MainApp(QMainWindow):
         total_unique_ref_imgs_missing = len(unique_img_files_wout_ref)
 
         # Display warning message
-        reply = QMessageBox.critical(
-            self,
-            title="Error - Images without a Reference",
-            text=f"{no_imgs_wout}/{total_no_imgs} images do not have a reference image.\n\n "
-                 f"{total_unique_ref_imgs_missing}/{total_expected_ref_imgs} unique reference images are missing.",
-            buttons=QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Quit,  # Add Quit button
-            defaultButton=QMessageBox.StandardButton.Ok
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Critical)
+        msg_box.setWindowTitle("Error - Images without a Reference")
+        msg_box.setText(f"{no_imgs_wout}/{total_no_imgs} images do not have a reference image.\n\n "
+                        f"{total_unique_ref_imgs_missing}/{total_expected_ref_imgs} unique reference images "
+                        f"are missing.")
+        ok_button = msg_box.addButton('Ok', QMessageBox.ButtonRole.AcceptRole)
+        quit_button = msg_box.addButton('Quit', QMessageBox.ButtonRole.RejectRole)
 
-        if reply == QMessageBox.StandardButton.Quit:
+        msg_box.exec()
+
+        if msg_box.clickedButton() == quit_button:
             QApplication.quit()
 
 
