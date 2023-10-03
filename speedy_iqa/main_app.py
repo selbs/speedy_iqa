@@ -360,8 +360,12 @@ class MainApp(QMainWindow):
         self.progress_bar.setFixedHeight(5)
         self.set_progress_bar_colors()
         # add the progress bar to the status bar at the bottom of the window
+        self.progress_text = QLabel()
+        self.progress_text.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.statusBar().addPermanentWidget(self.progress_text)
         self.statusBar().addPermanentWidget(self.progress_bar)
         percent_viewed = 100 * len([value for value in self.viewed_values.values() if value]) / len(self.file_list)
+        self.update_progress_text()
         self.update_progress_bar(percent_viewed)
         self.change_theme(self.settings.value("theme", "dark_blue.xml"))
 
@@ -422,6 +426,14 @@ class MainApp(QMainWindow):
         :type progress: float
         """
         self.progress_bar.setValue(int(progress))
+
+    def update_progress_text(self):
+        """
+        Update the progress bar with the current progress
+        """
+        viewed_no = len([value for value in self.viewed_values.values() if value])
+        total_no = len(self.file_list)
+        self.progress_text.setText(f"Progress: {viewed_no}/{total_no}")
 
     def init_connections(self):
         """
@@ -753,8 +765,7 @@ class MainApp(QMainWindow):
         msg_box = QMessageBox(self)
         msg_box.setIcon(QMessageBox.Icon.Critical)
         msg_box.setWindowTitle("Error - Images without a Reference")
-        msg_box.setText(f"{no_imgs_wout}/{total_no_imgs} images do not have a reference image.\n\n "
-                        f"{total_unique_ref_imgs_missing}/{total_expected_ref_imgs} unique reference images "
+        msg_box.setText(f"{total_unique_ref_imgs_missing}/{total_expected_ref_imgs} reference images "
                         f"are missing.")
         ok_button = msg_box.addButton('Ok', QMessageBox.ButtonRole.AcceptRole)
         quit_button = msg_box.addButton('Quit', QMessageBox.ButtonRole.RejectRole)
@@ -985,7 +996,7 @@ class MainApp(QMainWindow):
 
         radiobutton_heading = QLabel(self)
         radiobutton_heading.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        radiobutton_heading.setText(f"For {self.task}, please rate the image quality in comparison to the reference (left):".upper())
+        radiobutton_heading.setText(f"For {self.task}, please rate the image quality in comparison to the reference:".upper())
         radiobutton_heading.setWordWrap(True)
         radiobutton_heading.setStyleSheet("QLabel { margin-right: 10px; }")
         radiobutton_heading.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1030,7 +1041,7 @@ class MainApp(QMainWindow):
         # spacer4.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # layout.addWidget(spacer4)
 
-        button = QPushButton('Continue', clicked=self.show_page2)
+        button = QPushButton('Continue to 2/2', clicked=self.show_page2)
         button.setStyleSheet("font-size: 14px;")
         self.page1_layout.addWidget(button)
         self.page1.setLayout(self.page1_layout)
@@ -1075,7 +1086,7 @@ class MainApp(QMainWindow):
         # instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
         # self.page2_layout.addWidget(instructions2)
 
-        button = QPushButton('Back', clicked=self.show_page1)
+        button = QPushButton('Back to 1/2', clicked=self.show_page1)
         button.setStyleSheet("font-size: 14px;")
         self.page2_layout.addWidget(button)
         self.page2.setLayout(self.page2_layout)
@@ -1273,6 +1284,7 @@ class MainApp(QMainWindow):
                     else self.icons['not_viewed'].pixmap(self.file_tool_bar.iconSize() * 2))
         )
 
+        self.update_progress_text()
         percent_viewed = 100*len([value for value in self.viewed_values.values() if value])/len(self.file_list)
         self.update_progress_bar(percent_viewed)
 
