@@ -30,7 +30,7 @@ from random import Random
 
 from speedy_iqa.windows import AboutMessageBox, FileSelectionDialog
 from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale
-from speedy_iqa.utils import convert_to_checkstate, find_relative_image_path
+from speedy_iqa.utils import convert_to_checkstate, find_relative_image_path, invert_grayscale
 from speedy_iqa.graphics import CustomGraphicsView
 
 if hasattr(sys, '_MEIPASS'):
@@ -122,12 +122,14 @@ class MainApp(QMainWindow):
             self.reference_dir_path = self.settings.value("reference_path", ".")
             # self.reference_delimiter = self.settings.value("reference_delimiter", "__")
 
-            # TODO: Check all images have a reference image -> if not, say how many are missing and have continue or
-            #  quit buttons
-
             imgs_wout_ref = self.check_no_of_images_wout_ref()
+            self.quit_due_to_no_ref = False
+
             if imgs_wout_ref:
+                # QTimer.singleShot(0, lambda: self.show_imgs_wout_ref_warning(imgs_wout_ref))
                 self.show_imgs_wout_ref_warning(imgs_wout_ref)
+            if self.quit_due_to_no_ref:
+                return
 
             self.viewed_values = {f: False for f in self.file_list}
             self.rotation = {f: 0 for f in self.file_list}
@@ -588,8 +590,6 @@ class MainApp(QMainWindow):
         """
         Inverts the colors of the image.
         """
-        print("HERE!")
-        print(self.image)
         for i, image in enumerate([self.image, self.reference_image]):
             if image is not None:
                 # Invert the image
@@ -745,9 +745,7 @@ class MainApp(QMainWindow):
         msg_box.exec()
 
         if msg_box.clickedButton() == quit_button:
-            QApplication.quit()
-
-
+            self.quit_due_to_no_ref = True
 
     @staticmethod
     def read_file(file_path: str, file_extension: str):
@@ -1303,7 +1301,7 @@ class MainApp(QMainWindow):
             self.save_to_json()
         elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             if event.key() == Qt.Key.Key_Q:
-                QApplication.quit()
+                self.quit_app()
         else:
             super().keyPressEvent(event)
 
@@ -1468,6 +1466,10 @@ class MainApp(QMainWindow):
         :type event: QCloseEvent
         """
         # Ask the user if they want to save before closing
+
+        if self.quit_due_to_no_ref:
+            event.accept()
+            return
 
         close_msg_box = QMessageBox()
 
@@ -1707,13 +1709,19 @@ class MainApp(QMainWindow):
         """
         Quits the application, disconnecting all signals.
         """
-        self.timer.stop()
-        self.connection_manager.disconnect_all()
-        self.about_box.connection_manager.disconnect_all()
-        self.image_view.connection_manager.disconnect_all()
-        self.reference_view.connection_manager.disconnect_all()
+        if hasattr(self, 'timer'):
+            self.timer.stop()
+        if hasattr(self, 'connection_manager'):
+            self.connection_manager.disconnect_all()
+        if hasattr(self, 'about_box'):
+            self.about_box.connection_manager.disconnect_all()
+        if hasattr(self, 'image_view'):
+            self.image_view.connection_manager.disconnect_all()
+        if hasattr(self, 'reference_view'):
+            self.reference_view.connection_manager.disconnect_all()
+
+        self.close()
         QApplication.quit()
 
 
-def invert_grayscale(image):
-    return np.max(image) + np.min(image) - image
+
