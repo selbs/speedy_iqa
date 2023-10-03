@@ -29,7 +29,8 @@ from functools import partial
 from random import Random
 
 from speedy_iqa.windows import AboutMessageBox, FileSelectionDialog
-from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale, convert_to_checkstate
+from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale
+from speedy_iqa.utils import convert_to_checkstate, find_relative_image_path
 from speedy_iqa.graphics import CustomGraphicsView
 
 if hasattr(sys, '_MEIPASS'):
@@ -105,7 +106,9 @@ class MainApp(QMainWindow):
 
         self.json_path = self.settings.value("json_path", "")
         self.loaded = self.load_from_json()
+
         if not self.loaded:
+
             self.dir_path = self.settings.value("image_path", ".")
             if not os.path.isdir(self.dir_path):
                 if os.path.isdir(os.path.dirname(self.dir_path)):
@@ -113,12 +116,19 @@ class MainApp(QMainWindow):
                 else:
                     raise FileNotFoundError(f"Directory {self.dir_path} not found, nor was the parent directory found.")
 
-            self.file_list = sorted([f for f in os.listdir(self.dir_path) if f.endswith((
-                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
-            ))])
+            self.file_list = sorted(find_relative_image_path(self.dir_path))
             Random(4).shuffle(self.file_list)
+
             self.reference_dir_path = self.settings.value("reference_path", ".")
             # self.reference_delimiter = self.settings.value("reference_delimiter", "__")
+
+            # TODO: Check all images have a reference image -> if not, say how many are missing and have continue or
+            #  quit buttons
+
+            imgs_wout_ref = self.check_no_of_images_wout_ref()
+            if imgs_wout_ref:
+                self.show_imgs_wout_ref_warning(imgs_wout_ref)
+
             self.viewed_values = {f: False for f in self.file_list}
             self.rotation = {f: 0 for f in self.file_list}
             self.notes = {f: "" for f in self.file_list}
@@ -661,25 +671,81 @@ class MainApp(QMainWindow):
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
 
-        # if self.reference_delimiter:
+        ## Uncomment this block if adding delimiter to reference name
+        # if self.reference_delimiter and self.reference_delimiter != "":
         #     reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
         # else:
-        #     reference_name = os.path.splitext(self.file_list[self.current_index])[0]
+        #     reference_name = os.path.splitext(os.path.basename(self.file_list[self.current_index]))[0]
+        #
+        # if not reference_name.endswith(img_extension) and os.path.isfile(
+        #         os.path.join(self.reference_dir_path, reference_name + img_extension)
+        # ):
+        #     reference_name = reference_name + img_extension
 
-        reference_name = os.path.splitext(self.file_list[self.current_index])[0]
-        if not reference_name.endswith(img_extension):
-            reference_name = reference_name + img_extension
+        # Comment out this line if adding delimiter to reference name
+        reference_name = os.path.basename(self.file_list[self.current_index])
+
         reference_path = os.path.join(self.reference_dir_path, reference_name)
-
         try:
             self.image = self.read_file(img_path, img_extension)
             self.reference_image = self.read_file(reference_path, img_extension)
         except Exception as e:
-            # Handle the exception (e.g. display an error message)
+            # TODO: Could add a quit button here - else could end in never ending loop of 'okays'
             QMessageBox.critical(self, "Error", f"Failed to load file:\n{str(e)}", QMessageBox.StandardButton.Ok,
                                  defaultButton=QMessageBox.StandardButton.Ok)
             self.next_image(prev_failed=True)
             logger.exception(f"Failed to load file: {img_path} - Message: {str(e)}")
+
+    def check_no_of_images_wout_ref(self):
+        """
+        Checks the number of images without a reference image.
+        """
+        images_wout_ref = []
+        for file in self.file_list:
+            filename = os.path.basename(file)
+            if not os.path.isfile(os.path.join(self.reference_dir_path, filename)):
+                images_wout_ref.append(file)
+        return images_wout_ref
+
+    def show_imgs_wout_ref_warning(self, imgs_wout):
+        """
+        Shows a warning message if there are images without a reference image.
+
+        :param imgs_wout: The list of images without a reference image
+        """
+
+        no_imgs_wout = len(imgs_wout)
+        total_no_imgs = len(self.file_list)
+
+        unique_imgs = []
+        for file in self.file_list:
+            filename = os.path.basename(file)
+            if filename not in unique_imgs:
+                unique_imgs.append(filename)
+
+        unique_img_files_wout_ref = []
+        for file in imgs_wout:
+            filename = os.path.basename(file)
+            if filename not in unique_img_files_wout_ref:
+                unique_img_files_wout_ref.append(filename)
+
+        total_expected_ref_imgs = len(unique_imgs)
+        total_unique_ref_imgs_missing = len(unique_img_files_wout_ref)
+
+        # Display warning message
+        reply = QMessageBox.critical(
+            self,
+            title="Error - Images without a Reference",
+            text=f"{no_imgs_wout}/{total_no_imgs} images do not have a reference image.\n\n "
+                 f"{total_unique_ref_imgs_missing}/{total_expected_ref_imgs} unique reference images are missing.",
+            buttons=QMessageBox.StandardButtons.Ok | QMessageBox.StandardButtons.Quit,  # Add Quit button
+            defaultButton=QMessageBox.StandardButton.Ok
+        )
+
+        if reply == QMessageBox.StandardButton.Quit:
+            QApplication.quit()
+
+
 
     @staticmethod
     def read_file(file_path: str, file_extension: str):

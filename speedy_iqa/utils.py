@@ -25,11 +25,12 @@ Functions:
 import logging.config
 import yaml
 import os
-from typing import Dict, Union, Any, Optional, Tuple, List
+from typing import Dict, Union, Any, Optional, Tuple, List, Collection
 from PyQt6.QtCore import *
 import sys
 import numpy as np
 from PIL import Image
+import glob
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -261,3 +262,24 @@ def create_icns(
 
     # Save the images as .icns
     icon_sizes[0].save(f'{icns_path}.icns', format='ICNS', append_images=icon_sizes[1:])
+
+
+def find_relative_image_path(
+        base_path: str,
+        extensions: Collection[str] = ('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif', 'dcm', 'dicom',)
+) -> List[str]:
+    """
+    Recursively find all image files in a given directory and return their relative paths.
+
+    :param base_path: The path to the directory to search.
+    :param extensions: A list of file extensions to consider as image files. Default is ['png', 'jpg', 'jpeg', 'gif',
+        'bmp', 'tiff', 'tif', 'dcm', 'dicom',].
+    :return: A list of relative paths pointing to the image files.
+    """
+    all_images = []
+    for extension in extensions:
+        for image_path in glob.glob(f"{base_path}/**/*.{extension}", recursive=True):
+            relative_path = os.path.relpath(image_path, start=base_path)
+            all_images.append(relative_path)
+
+    return all_images
