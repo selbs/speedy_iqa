@@ -738,7 +738,7 @@ class MainApp(QMainWindow):
             title="Error - Images without a Reference",
             text=f"{no_imgs_wout}/{total_no_imgs} images do not have a reference image.\n\n "
                  f"{total_unique_ref_imgs_missing}/{total_expected_ref_imgs} unique reference images are missing.",
-            buttons=QMessageBox.StandardButtons.Ok | QMessageBox.StandardButtons.Quit,  # Add Quit button
+            buttons=QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Quit,  # Add Quit button
             defaultButton=QMessageBox.StandardButton.Ok
         )
 
