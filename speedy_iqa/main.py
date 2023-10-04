@@ -28,7 +28,8 @@ from PyQt6.QtWidgets import *
 from qt_material import apply_stylesheet
 
 from speedy_iqa.main_app import MainApp
-from speedy_iqa.wizard import ConfigurationWizard
+# from speedy_iqa.wizard import ConfigurationWizard
+from speedy_iqa.unified_wizard import ConfigurationWizard
 from speedy_iqa.windows import LoadMessageBox, SetupWindow
 
 if hasattr(sys, '_MEIPASS'):
@@ -130,7 +131,7 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
     load_msg_box = LoadMessageBox()
     result = load_msg_box.exec()
     config_file = load_msg_box.config_combo.currentText()
-    print("main", config_file)
+    # print("main", config_file)
     load_msg_box.save_last_config(config_file)
 
     # User selects to `Ok` -> load the load dialog box
