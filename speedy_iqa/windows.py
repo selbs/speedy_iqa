@@ -258,7 +258,9 @@ class LoadMessageBox(QDialog):
         config_layout.addWidget(config_label)
         config_layout.addWidget(self.config_combo)
         right_layout.addLayout(config_layout)
-        config_label2 = QLabel("N.B. the config file can be edited in the Settings.")
+        config_label2 = QLabel("N.B. the config file can be edited in the Advanced Settings in Set Up.")
+        config_label2.setWordWrap(True)
+        config_label2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         config_label2.setStyleSheet("font-size: 14px; font-style: italic;")
         config_layout.addWidget(config_label2)
 
@@ -269,7 +271,10 @@ class LoadMessageBox(QDialog):
         right_layout.addItem(spacer)
 
         # Create a QLabel to display a prompt to the user for the following dialog
-        sub_text2 = QLabel("In the next window, please select a directory to\nload the image files...")
+        sub_text2 = QLabel("To name the task/purpose of the images and to change the labelling subcategories, "
+                           "please use 'Set Up' first.")
+        sub_text2.setWordWrap(True)
+        sub_text2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sub_text2.setStyleSheet("font-size: 14px;")
         sub_text2.setAlignment(Qt.AlignmentFlag.AlignTop)
         right_layout.addWidget(sub_text2)
@@ -278,18 +283,22 @@ class LoadMessageBox(QDialog):
         hbox = QHBoxLayout()
 
         # Add a QPushButton for "Configuration Wizard"
-        config_wizard_button = QPushButton("Settings")
+        config_wizard_button = QPushButton("1. Set Up")
         self.connection_manager.connect(config_wizard_button.clicked, self.on_wizard_button_clicked)
         hbox.addWidget(config_wizard_button)
 
         # Add a spacer to create some space between the buttons and the Configuration Wizard button
-        spacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        hbox.addItem(spacer)
+        # spacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        # hbox.addItem(spacer)
 
         # Add a QPushButton for "OK"
-        ok_button = QPushButton("OK")
+        ok_button = QPushButton("2. Annotate")
         self.connection_manager.connect(ok_button.clicked, self.accept)
         hbox.addWidget(ok_button)
+
+        # Add a spacer to create some space between the buttons and the Configuration Wizard button
+        spacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        hbox.addItem(spacer)
 
         # Add a QPushButton for "Cancel"
         cancel_button = QPushButton("Cancel")

@@ -271,15 +271,17 @@ class UnifiedOptionsPage(QWizardPage):
         self.task_layout.addWidget(self.task_edit)
         self.layout.addLayout(self.task_layout)
         examples_label = QLabel(
-            "Examples include: 'General use', 'Diagnosis', 'Classification', 'AI Development', etc."
+            "Examples include: 'General use', 'Diagnosis', 'Tumour Classification', 'Facial Recognition', "
+            "Object Detection, etc."
         )
+        examples_label.setWordWrap(True)
         examples_label.setStyleSheet("font-style: italic;")
         self.layout.addWidget(examples_label)
 
         spacer = QSpacerItem(0, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.layout.addItem(spacer)
 
-        radio_label = QLabel("Assessment Categories:")
+        radio_label = QLabel("Quality Subcategories:")
         radio_label.setStyleSheet("font-weight: bold;")
         self.layout.addWidget(radio_label)
 
@@ -299,51 +301,55 @@ class UnifiedOptionsPage(QWizardPage):
         self.radio_layouts = {}
         self.radio_box_layouts = {}
         for i in range(wiz.nradio_pages):
-            self.radio_layouts[i] = QVBoxLayout()
-            frame = QFrame()
-            frame.setObjectName("RadioPageFrame")
-            try:
-                border_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryLightColor']
-            except KeyError:
-                border_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryColor']
-            frame.setStyleSheet(f"#RadioPageFrame {{ border: 2px solid {border_color}; border-radius: 5px; }}")
+            # Remove to allow for page 1 to be edited
+            if i != 0:
+                self.radio_layouts[i] = QVBoxLayout()
+                frame = QFrame()
+                frame.setObjectName("RadioPageFrame")
+                try:
+                    border_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryLightColor']
+                except KeyError:
+                    border_color = get_theme(self.settings.value("theme", 'dark_blue.xml'))['secondaryColor']
+                frame.setStyleSheet(f"#RadioPageFrame {{ border: 2px solid {border_color}; border-radius: 5px; }}")
 
-            page_title_layout = QVBoxLayout()
-            page_title = QLabel(f"Page {i + 1}")
-            page_title.setStyleSheet("font-weight: bold;")
-            page_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+                page_title_layout = QVBoxLayout()
+                page_title = QLabel(f"Page {i + 1}")
+                page_title.setStyleSheet("font-weight: bold;")
+                page_title.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-            if i == 0:
-                page_info = QLabel("Enter the categories to appear on the first page of buttons. "
-                                   "You may wish these categories to be assessed independently of "
-                                   "others, e.g. 'Overall Quality'.")
-            else:
-                page_info = QLabel(f"Enter the categories to appear on page {i + 1}, "
-                                   f"e.g. 'Contrast', 'Noise', 'Artefacts'.")
+                if i == 0:
+                    page_info = QLabel("Enter the subcategories to appear on the first page of buttons. "
+                                       "You may wish these categories to be assessed independently of "
+                                       "others, e.g. 'Overall Quality'.")
+                else:
+                    page_info = QLabel(f"Enter the quality subcategories which will appear on page {i + 1}, "
+                                       f"e.g. 'Contrast', 'Noise', 'Artefacts'.")
 
-            page_info.setStyleSheet("font-style: italic;")
-            page_info.setWordWrap(True)
-            page_info.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-            page_title_layout.addWidget(page_title)
-            page_title_layout.addWidget(page_info)
+                page_info.setStyleSheet("font-style: italic;")
+                page_info.setWordWrap(True)
+                page_info.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+                # Uncomment if you want the page title to be above the page info
+                # page_title_layout.addWidget(page_title)
+                page_info.setAlignment(Qt.AlignmentFlag.AlignTop)
+                page_title_layout.addWidget(page_info)
 
-            self.add_radio_button = QPushButton("+")
-            self.add_radio_button.setProperty('class', 'success')
-            self.connection_manager.connect(self.add_radio_button.clicked, lambda: self.add_radio_group())
+                self.add_radio_button = QPushButton("+")
+                self.add_radio_button.setProperty('class', 'success')
+                self.connection_manager.connect(self.add_radio_button.clicked, lambda: self.add_radio_group())
 
-            row_header_layout = QHBoxLayout()
-            row_header_layout.addLayout(page_title_layout)
-            row_header_layout.addWidget(self.add_radio_button, alignment=Qt.AlignmentFlag.AlignTop)
-            self.radio_layouts[i].addLayout(row_header_layout)
+                row_header_layout = QHBoxLayout()
+                row_header_layout.addLayout(page_title_layout)
+                row_header_layout.addWidget(self.add_radio_button, alignment=Qt.AlignmentFlag.AlignTop)
+                self.radio_layouts[i].addLayout(row_header_layout)
 
-            self.radio_box_layouts[i] = QVBoxLayout()
-            for group in self.radio_buttons[i]:
-                self.add_radio_group(group['title'], i)
+                self.radio_box_layouts[i] = QVBoxLayout()
+                for group in self.radio_buttons[i]:
+                    self.add_radio_group(group['title'], i)
 
-            self.radio_layouts[i].addLayout(self.radio_box_layouts[i])
-            frame.setLayout(self.radio_layouts[i])
+                self.radio_layouts[i].addLayout(self.radio_box_layouts[i])
+                frame.setLayout(self.radio_layouts[i])
 
-            self.radio_layout.addWidget(frame)
+                self.radio_layout.addWidget(frame)
 
     def initializePage(self):
 
@@ -518,13 +524,17 @@ class ConfigurationWizard(QWizard):
 
         for i in range(self.nradio_pages):
             titles = []
-            for k in range(self.main_page.radio_box_layouts[i].count()):
-                hbox = self.main_page.radio_box_layouts[i].itemAt(k).layout()  # Get the QHBoxLayout
-                if hbox is not None:
-                    if hbox.count() > 0:
-                        line_edit = hbox.itemAt(0).widget()  # Get the QLineEdit from the QHBoxLayout
-                        if line_edit.text():
-                            titles.append(line_edit.text())
+            # Remove the below if statement (but keep the content!!) if you want the first page to be editable
+            if i != 0:
+                for k in range(self.main_page.radio_box_layouts[i].count()):
+                    hbox = self.main_page.radio_box_layouts[i].itemAt(k).layout()  # Get the QHBoxLayout
+                    if hbox is not None:
+                        if hbox.count() > 0:
+                            line_edit = hbox.itemAt(0).widget()  # Get the QLineEdit from the QHBoxLayout
+                            if line_edit.text():
+                                titles.append(line_edit.text())
+            else:
+                titles.append("Overall Quality")
             self.config_data[f'radiobuttons_page{i + 1}'] = [
                 {'title': title, 'labels': [1, 2, 3, 4]} for title in titles
             ]
