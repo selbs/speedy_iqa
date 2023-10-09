@@ -269,7 +269,7 @@ class LoadMessageBox(QDialog):
         self.config_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         config_layout.addLayout(config_box_layout)
         right_layout.addLayout(config_layout)
-        config_label2 = QLabel("Change this if you have created or been provided with "
+        config_label2 = QLabel("Only change this if you have created or been provided with "
                                "specific config file/s.")
         config_label2.setWordWrap(True)
         config_label2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -428,8 +428,8 @@ class SetupWindow(QDialog):
         general_info_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         general_info_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         info_layout.addWidget(general_info_label)
-        general_add_info_label = QLabel("Please select whether to start a new save file (json) or "
-                                        "load progress...")
+        general_add_info_label = QLabel("Select to start a new save file (json) or load an existing one to continue "
+                                        "previous progress...")
         general_add_info_label.setStyleSheet("font-size: 12px; font-style: italic;")
         general_add_info_label.setAlignment(Qt.AlignmentFlag.AlignTop)
         general_add_info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
