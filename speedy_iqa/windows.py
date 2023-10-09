@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import *
 from typing import Optional, List
 import sys
 import json
+from qt_material import get_theme
 
 from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging
 
@@ -236,7 +237,8 @@ class LoadMessageBox(QDialog):
         main_text.setAlignment(Qt.AlignmentFlag.AlignBottom)
         right_layout.addWidget(main_text)
 
-        right_layout.addItem(spacer)
+        # right_layout.addItem(spacer)
+        right_layout.addStretch()
 
         # Set up QSettings to remember the last config file used
         self.settings = QSettings('SpeedyIQA', 'ImageViewer')
@@ -253,15 +255,25 @@ class LoadMessageBox(QDialog):
 
         # Add the QComboBox to the dialog box
         config_layout = QVBoxLayout()
-        config_label = QLabel("Please select a config file to use:")
+        config_box_layout = QHBoxLayout()
+        config_label = QLabel("Config file:")
+        config_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         config_label.setStyleSheet("font-size: 14px;")
-        config_layout.addWidget(config_label)
-        config_layout.addWidget(self.config_combo)
+        config_box_layout.addWidget(config_label)
+        config_box_layout.addWidget(self.config_combo)
+        try:
+            combo_text_colour = get_theme(self.settings.value('theme', 'dark_blue.xml'))['secondaryTextColor']
+        except KeyError:
+            combo_text_colour = get_theme(self.settings.value('theme', 'dark_blue.xml'))['secondaryLightColor']
+        self.config_combo.setStyleSheet(f"QComboBox:disabled::item {{ color: {combo_text_colour}; }}")
+        self.config_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        config_layout.addLayout(config_box_layout)
         right_layout.addLayout(config_layout)
-        config_label2 = QLabel("N.B. the config file can be edited in the Advanced Settings in Set Up.")
+        config_label2 = QLabel("Change this if you have created or been provided with "
+                               "specific config file/s.")
         config_label2.setWordWrap(True)
         config_label2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        config_label2.setStyleSheet("font-size: 14px; font-style: italic;")
+        config_label2.setStyleSheet("font-size: 12px; font-style: italic;")
         config_layout.addWidget(config_label2)
 
         # Connect the currentTextChanged signal of the QComboBox to a slot
@@ -277,13 +289,14 @@ class LoadMessageBox(QDialog):
         sub_text2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sub_text2.setStyleSheet("font-size: 14px;")
         sub_text2.setAlignment(Qt.AlignmentFlag.AlignTop)
-        right_layout.addWidget(sub_text2)
+        # right_layout.addWidget(sub_text2)
+        right_layout.addStretch()
 
         # Create a horizontal layout for buttons
         hbox = QHBoxLayout()
 
         # Add a QPushButton for "Configuration Wizard"
-        config_wizard_button = QPushButton("1. Set Up")
+        config_wizard_button = QPushButton("Set Up")
         self.connection_manager.connect(config_wizard_button.clicked, self.on_wizard_button_clicked)
         hbox.addWidget(config_wizard_button)
 
@@ -292,7 +305,7 @@ class LoadMessageBox(QDialog):
         # hbox.addItem(spacer)
 
         # Add a QPushButton for "OK"
-        ok_button = QPushButton("2. Annotate")
+        ok_button = QPushButton("Annotate")
         self.connection_manager.connect(ok_button.clicked, self.accept)
         hbox.addWidget(ok_button)
 
@@ -400,7 +413,7 @@ class SetupWindow(QDialog):
         # Set window title
         self.setWindowTitle("Speedy IQA Setup")
 
-        spacer = QSpacerItem(50, 50, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        spacer = QSpacerItem(10, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         expanding_spacer = QSpacerItem(10, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         fixed_spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
@@ -410,11 +423,16 @@ class SetupWindow(QDialog):
         logo_layout = QHBoxLayout()
 
         info_layout = QVBoxLayout()
-        general_info_label = QLabel("Please whether to load progress and if not, select the image folders...")
+        general_info_label = QLabel("Begin Annotating...")
+        general_info_label.setAlignment(Qt.AlignmentFlag.AlignTop)
+        general_info_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         general_info_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        general_add_info_label = QLabel("N.B. The previous paths used should be loaded automatically. ")
-        general_add_info_label.setStyleSheet("font-size: 12px; font-style: italic;")
         info_layout.addWidget(general_info_label)
+        general_add_info_label = QLabel("Please select whether to start a new save file (json) or "
+                                        "load progress...")
+        general_add_info_label.setStyleSheet("font-size: 12px; font-style: italic;")
+        general_add_info_label.setAlignment(Qt.AlignmentFlag.AlignTop)
+        general_add_info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         info_layout.addWidget(general_add_info_label)
         logo_layout.addLayout(info_layout)
 
@@ -433,7 +451,14 @@ class SetupWindow(QDialog):
 
         layout.addSpacerItem(expanding_spacer)
 
+        json_frame = QFrame()
         json_layout = QVBoxLayout()
+
+        ## LOAD PROGRESS TITLE
+        load_json_title = QLabel("Load Progress:")
+        load_json_title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        layout.addWidget(load_json_title)
+
         json_info_label = QLabel("To load progress, please select an existing .json file:")
         json_info_label.setStyleSheet("font-weight: bold;")
         json_layout.addWidget(json_info_label)
@@ -447,41 +472,83 @@ class SetupWindow(QDialog):
         json_selection_layout.addWidget(self.json_button)
         json_layout.addLayout(json_selection_layout)
 
-        layout.addLayout(json_layout)
-
-        layout.addSpacerItem(fixed_spacer)
-
-        self.new_json_tickbox = QCheckBox("Start from scratch (i.e. start a new JSON file)")
-        self.new_json_tickbox.setStyleSheet("font-weight: bold;")
-        self.new_json_tickbox.setObjectName("new_json")
-        layout.addWidget(self.new_json_tickbox)
+        json_frame.setLayout(json_layout)
+        layout.addWidget(json_frame)
 
         layout.addItem(spacer)
 
         layout.addSpacerItem(expanding_spacer)
 
+        ## START FROM SCRATCH TITLE
+        new_json_title = QLabel("Start from Scratch:")
+        new_json_title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        layout.addWidget(new_json_title)
+
+        new_json_frame = QFrame()
+        new_json_layout = QVBoxLayout()
+        self.new_json_tickbox = QCheckBox("Check to start from scratch (i.e. start a new JSON file)")
+        self.new_json_tickbox.setStyleSheet("font-weight: bold;")
+        self.new_json_tickbox.setObjectName("new_json")
+        new_json_layout.addWidget(self.new_json_tickbox)
+
+        fixed_spacer2 = QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        new_json_layout.addSpacerItem(fixed_spacer2)
+
         dcm_layout = QVBoxLayout()
-        dcm_info_label = QLabel("Please select the folders containing the images:")
-        dcm_info_label.setStyleSheet("font-weight: bold;")
+
+        dcm_info_label = QLabel("Please select the folders/directories containing the images:")
+        # dcm_info_label.setStyleSheet("font-weight: bold;")
         dcm_layout.addWidget(dcm_info_label)
 
         dcm_layout.addSpacerItem(fixed_spacer)
 
+        im_selection_frame = QFrame()
+        try:
+            frame_color = get_theme(self.settings.value('theme', 'dark_blue.xml'))['secondaryLightColor']
+        except KeyError:
+            frame_color = get_theme(self.settings.value('theme', 'dark_blue.xml'))['secondaryColor']
+
+        im_selection_frame.setObjectName("im_selection_frame")
+        im_selection_frame.setStyleSheet(f"#im_selection_frame {{ border: 1px solid {frame_color}; }}")
+
+        im_selection_layout = QVBoxLayout()
         dcm_selection_layout = QHBoxLayout()
-        dcm_selection_layout.addWidget(QLabel("Selected Image Folder:"))
+        im_selection_label = QLabel("Images for Quality Assessment:")
+        im_selection_label.setStyleSheet("font-weight: bold;")
+        dcm_selection_layout.addWidget(im_selection_label)
         dcm_selection_layout.addSpacerItem(expanding_spacer)
         dcm_selection_layout.addWidget(self.folder_label)
         dcm_selection_layout.addWidget(self.folder_button)
-        dcm_layout.addLayout(dcm_selection_layout)
+        im_selection_layout.addLayout(dcm_selection_layout)
+        im_folder_explanation = QLabel("This folder contains the images to be labelled.\n"
+                                       "N.B. The images can be in subfolders.")
+        im_folder_explanation.setAlignment(Qt.AlignmentFlag.AlignRight)
+        im_folder_explanation.setStyleSheet("font-size: 12px; font-style: italic;")
+        im_selection_layout.addWidget(im_folder_explanation)
+        im_selection_frame.setLayout(im_selection_layout)
+        dcm_layout.addWidget(im_selection_frame)
 
         dcm_layout.addSpacerItem(fixed_spacer)
 
+        ref_selection_frame = QFrame()
+        ref_selection_frame.setObjectName("ref_selection_frame")
+        ref_selection_frame.setStyleSheet(f"#ref_selection_frame {{ border: 1px solid {frame_color}; }}")
+
+        ref_selection_layout = QVBoxLayout()
         reference_selection_layout = QHBoxLayout()
-        reference_selection_layout.addWidget(QLabel("Selected Reference Image Folder:"))
+        ref_selection_label = QLabel("Reference Images:")
+        ref_selection_label.setStyleSheet("font-weight: bold;")
+        reference_selection_layout.addWidget(ref_selection_label)
         reference_selection_layout.addSpacerItem(expanding_spacer)
         reference_selection_layout.addWidget(self.reference_folder_label)
         reference_selection_layout.addWidget(self.reference_folder_button)
-        dcm_layout.addLayout(reference_selection_layout)
+        ref_selection_layout.addLayout(reference_selection_layout)
+        ref_folder_explanation = QLabel("This folder contains the reference images for comparison.")
+        ref_folder_explanation.setAlignment(Qt.AlignmentFlag.AlignRight)
+        ref_folder_explanation.setStyleSheet("font-size: 12px; font-style: italic;")
+        ref_selection_layout.addWidget(ref_folder_explanation)
+        ref_selection_frame.setLayout(ref_selection_layout)
+        dcm_layout.addWidget(ref_selection_frame)
 
         dcm_layout.addSpacerItem(fixed_spacer)
 
@@ -497,13 +564,18 @@ class SetupWindow(QDialog):
         # delimiter_layout.addSpacerItem(expanding_spacer)
         # dcm_layout.addLayout(delimiter_layout)
 
-        layout.addLayout(dcm_layout)
+        new_json_layout.addLayout(dcm_layout)
+        new_json_frame.setLayout(new_json_layout)
+        layout.addWidget(new_json_frame)
 
         layout.addItem(spacer)
 
         layout.addSpacerItem(expanding_spacer)
         # Add dialog buttons
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        cancel_button = self.button_box.button(QDialogButtonBox.StandardButton.Cancel)
+        cancel_button.setText("Back")
+
         self.connection_manager.connect(self.button_box.accepted, self.on_accepted)
         self.connection_manager.connect(self.button_box.rejected, self.reject)
         layout.addWidget(self.button_box)

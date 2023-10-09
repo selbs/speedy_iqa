@@ -78,6 +78,7 @@ class MainApp(QMainWindow):
         super().__init__()
         # Initialize UI
         self.app = app
+        self.should_quit = False
         self.settings = settings
         self.connection_manager = ConnectionManager()
         self.about_box = AboutMessageBox()
@@ -129,7 +130,6 @@ class MainApp(QMainWindow):
             # self.reference_delimiter = self.settings.value("reference_delimiter", "__")
 
             imgs_wout_ref = self.check_no_of_images_wout_ref()
-            self.should_quit = False
 
             if imgs_wout_ref:
                 self.show_imgs_wout_ref_warning(imgs_wout_ref)

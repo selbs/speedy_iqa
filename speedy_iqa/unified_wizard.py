@@ -257,8 +257,8 @@ class UnifiedOptionsPage(QWizardPage):
         self.radio_buttons = wiz.radio_buttons
         self.settings = wiz.settings
 
-        self.setTitle(f"Settings")
-        self.setSubTitle(f"\nOnce completed, please restart Speedy IQA to apply changes.")
+        self.setTitle(f"Set Up")
+        self.setSubTitle(f"\nCustomise the task and subcategories for labelling.")
 
         self.layout = QVBoxLayout(self)
 
@@ -504,6 +504,7 @@ class ConfigurationWizard(QWizard):
 
         self.connection_manager.connect(self.finished, self.save_config)
 
+
     def create_unified_page(self):
         page = UnifiedOptionsPage(self)
         page.setCommitPage(True)
@@ -561,6 +562,7 @@ class ConfigurationWizard(QWizard):
         # Makes a log of the new configuration
         logger, console_msg = setup_logging(self.config_data['log_dir'])
         logger.info(f"Configuration saved to {self.config_path}")
+        # super().close()
 
 
 if __name__ == '__main__':

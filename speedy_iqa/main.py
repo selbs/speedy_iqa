@@ -127,48 +127,71 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
     # Set the application icon theme
     QIcon.setThemeName(icon_theme)
 
-    # Create the initial dialog box
-    load_msg_box = LoadMessageBox()
-    result = load_msg_box.exec()
-    config_file = load_msg_box.config_combo.currentText()
-    # print("main", config_file)
-    load_msg_box.save_last_config(config_file)
+    while True:
 
-    # User selects to `Ok` -> load the load dialog box
-    if result == load_msg_box.DialogCode.Accepted:
-        # If the user selects to `Ok`, load the dialog to select the dicom directory
-        setup_window = SetupWindow(settings)
-        result = setup_window.exec()
+        # Create the initial dialog box
+        load_msg_box = LoadMessageBox()
+        result = load_msg_box.exec()
+        config_file = load_msg_box.config_combo.currentText()
+        # print("main", config_file)
+        load_msg_box.save_last_config(config_file)
 
-        if result == setup_window.DialogCode.Accepted:
-            # Create the main window and pass the dicom directory
-            window = MainApp(app, settings)
-            if not window.should_quit:
-                window.show()
+        # User selects to `Ok` -> load the load dialog box
+        if result == load_msg_box.DialogCode.Accepted:
+            # If the user selects to `Ok`, load the dialog to select the dicom directory
+            setup_window = SetupWindow(settings)
+            result = setup_window.exec()
+
+            if result == setup_window.DialogCode.Accepted:
+                # Create the main window and pass the dicom directory
+                window = MainApp(app, settings)
+                if not window.should_quit:
+                    window.show()
+                    break
+                else:
+                    cleanup()
+                    sys.exit()
             else:
-                cleanup()
-                sys.exit()
-        else:
+                continue
+                # cleanup()
+                # sys.exit()
+
+        # User selects to `Cancel` -> exit the application
+        elif result == load_msg_box.DialogCode.Rejected:
             cleanup()
             sys.exit()
 
-    # User selects to `Cancel` -> exit the application
-    elif result == load_msg_box.DialogCode.Rejected:
-        cleanup()
-        sys.exit()
-
-    # User selects to `Conf. Wizard` -> show the ConfigurationWizard
-    else:
-        if hasattr(sys, '_MEIPASS'):
-            # This is a py2app executable
-            resource_dir = sys._MEIPASS
-        elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
-            # This is a regular Python script
-            resource_dir = os.path.dirname(os.path.abspath("__main__"))
+        # User selects to `Conf. Wizard` -> show the ConfigurationWizard
         else:
-            resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
-        wizard = ConfigurationWizard(os.path.join(resource_dir, config_file))
-        wizard.show()
+            if hasattr(sys, '_MEIPASS'):
+                # This is a py2app executable
+                resource_dir = sys._MEIPASS
+            elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
+                # This is a regular Python script
+                resource_dir = os.path.dirname(os.path.abspath("__main__"))
+            else:
+                resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
+            wizard = ConfigurationWizard(os.path.join(resource_dir, config_file))
+            result = wizard.exec()
+            if result == 1:
+                continue
+                # setup_window = SetupWindow(settings)
+                # result = setup_window.exec()
+                #
+                # if result == setup_window.DialogCode.Accepted:
+                #     # Create the main window and pass the dicom directory
+                #     window = MainApp(app, settings)
+                #     if not window.should_quit:
+                #         window.show()
+                #     else:
+                #         cleanup()
+                #         sys.exit()
+                # else:
+                #     cleanup()
+                #     sys.exit()
+            else:
+                cleanup()
+                sys.exit()
 
     exit_code = app.exec()
     cleanup()
