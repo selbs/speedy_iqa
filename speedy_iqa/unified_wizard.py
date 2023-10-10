@@ -335,7 +335,7 @@ class UnifiedOptionsPage(QWizardPage):
 
                 self.add_radio_button = QPushButton("+")
                 self.add_radio_button.setProperty('class', 'success')
-                self.connection_manager.connect(self.add_radio_button.clicked, lambda: self.add_radio_group())
+                self.connection_manager.connect(self.add_radio_button.clicked, lambda: self.add_radio_group(k=i))
 
                 row_header_layout = QHBoxLayout()
                 row_header_layout.addLayout(page_title_layout)
