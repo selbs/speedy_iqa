@@ -740,6 +740,9 @@ class MainApp(QMainWindow):
         """
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
+        print(img_path)
+        print(img_extension)
+        print(self.reference_dir_path)
 
         ## Uncomment this block if adding delimiter to reference name
         if self.reference_delimiter and self.reference_delimiter != "":
@@ -751,6 +754,11 @@ class MainApp(QMainWindow):
                 os.path.join(self.reference_dir_path, reference_name + img_extension)
         ):
             reference_name = reference_name + img_extension
+
+        print(reference_name)
+        print(os.path.isfile(
+                os.path.join(self.reference_dir_path, reference_name + img_extension)
+        ))
 
         ## Comment out this line if adding delimiter to reference name
         # reference_name = os.path.basename(self.file_list[self.current_index])
