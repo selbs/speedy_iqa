@@ -127,7 +127,7 @@ class MainApp(QMainWindow):
             Random(4).shuffle(self.file_list)
 
             self.reference_dir_path = self.settings.value("reference_path", ".")
-            # self.reference_delimiter = self.settings.value("reference_delimiter", "__")
+            self.reference_delimiter = self.settings.value("reference_delimiter", "__")
 
             imgs_wout_ref = self.check_no_of_images_wout_ref()
 
@@ -742,18 +742,18 @@ class MainApp(QMainWindow):
         img_extension = os.path.splitext(img_path)[1]
 
         ## Uncomment this block if adding delimiter to reference name
-        # if self.reference_delimiter and self.reference_delimiter != "":
-        #     reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
-        # else:
-        #     reference_name = os.path.splitext(os.path.basename(self.file_list[self.current_index]))[0]
-        #
-        # if not reference_name.endswith(img_extension) and os.path.isfile(
-        #         os.path.join(self.reference_dir_path, reference_name + img_extension)
-        # ):
-        #     reference_name = reference_name + img_extension
+        if self.reference_delimiter and self.reference_delimiter != "":
+            reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+        else:
+            reference_name = os.path.splitext(os.path.basename(self.file_list[self.current_index]))[0]
 
-        # Comment out this line if adding delimiter to reference name
-        reference_name = os.path.basename(self.file_list[self.current_index])
+        if not reference_name.endswith(img_extension) and os.path.isfile(
+                os.path.join(self.reference_dir_path, reference_name + img_extension)
+        ):
+            reference_name = reference_name + img_extension
+
+        ## Comment out this line if adding delimiter to reference name
+        # reference_name = os.path.basename(self.file_list[self.current_index])
 
         reference_path = os.path.join(self.reference_dir_path, reference_name)
         try:
@@ -1467,7 +1467,7 @@ class MainApp(QMainWindow):
         data = {
             'image_directory': self.dir_path,
             'reference_image_directory': self.reference_dir_path,
-            # 'reference_delimiter': self.reference_delimiter,
+            'reference_delimiter': self.reference_delimiter,
             'files': []
         }
         for filename in self.file_list:
@@ -1517,7 +1517,7 @@ class MainApp(QMainWindow):
             self.file_list = [entry['filename'] for entry in data['files']]
             self.dir_path = data['image_directory']
             self.reference_dir_path = data['reference_image_directory']
-            # self.reference_delimiter = data['reference_delimiter']
+            self.reference_delimiter = data['reference_delimiter']
 
             for entry in data['files']:
                 filename = entry['filename']
