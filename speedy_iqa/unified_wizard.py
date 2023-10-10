@@ -229,10 +229,9 @@ class AdvancedSettingsDialog(QDialog):
         # self.settings.setValue("backup_interval", self.backup_int_spinbox.value())
 
         if self.filename_edit.text():
-            self.wiz.config_filename = self.filename_edit.text()
+            self.wiz.config_file = self.filename_edit.text()
         else:
-            self.wiz.config_filename = self.config_files_combobox.currentText()
-        self.wiz.config_path = os.path.join(self.wiz.config_dir, self.wiz.config_filename)
+            self.wiz.config_file = self.config_files_combobox.currentText()
         self.wiz.log_dir = self.log_dir_edit.text()
         self.wiz.backup_dir = self.backup_dir_edit.text()
         self.wiz.backup_interval = self.backup_int_spinbox.value()
@@ -429,12 +428,12 @@ class ConfigurationWizard(QWizard):
         - accept: Saves the configuration to a .yml file and closes the wizard.
     """
 
-    def __init__(self, config_path: str):
+    def __init__(self, config_file: str):
         """
         Initializes the wizard.
 
-        :param config_path: The path to the configuration file.
-        :type config_path: str
+        :param config_file: The configuration file name.
+        :type config_file: str
         """
         super().__init__()
         self.settings = QSettings('SpeedyIQA', 'ImageViewer')
@@ -458,9 +457,7 @@ class ConfigurationWizard(QWizard):
         # Set the wizard style to have the title and icon at the top
         self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
 
-        self.config_path = config_path
-        self.config_dir = os.path.dirname(config_path)
-        self.config_filename = os.path.basename(config_path)
+        self.config_file = config_file
         self.config_data = None
 
         # Enable IndependentPages option
@@ -472,7 +469,7 @@ class ConfigurationWizard(QWizard):
         self.setPixmap(QWizard.WizardPixmap.LogoPixmap, pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
 
         # Load the config file
-        self.config_data = open_yml_file(self.config_path)
+        self.config_data = open_yml_file(os.path.join(resource_dir, self.config_file))
 
         for i in range(self.nradio_pages):
             self.radio_buttons[i] = self.config_data.get(f'radiobuttons_page{i + 1}', [])
@@ -514,11 +511,11 @@ class ConfigurationWizard(QWizard):
         """
         Saves the configuration file and closes the wizard.
         """
-        filename = self.config_path
-
-        # Add .yml extension if not provided by the user
-        if not filename.endswith('.yml'):
-            filename += '.yml'
+        # filename = self.config_file
+        #
+        # # Add .yml extension if not provided by the user
+        # if not filename.endswith('.yml'):
+        #     filename += '.yml'
 
         self.task = self.main_page.task_edit.text()
         self.config_data['task'] = self.task
@@ -545,23 +542,23 @@ class ConfigurationWizard(QWizard):
         self.config_data['max_backups'] = self.max_backups
         self.config_data['backup_interval'] = self.backup_interval
 
-        if not self.config_path.endswith('.yml'):
-            self.config_path += '.yml'
+        if not self.config_file.endswith('.yml'):
+            self.config_file += '.yml'
 
         self.settings.setValue('task', self.task)
-        self.settings.setValue('config_file', self.config_path)
+        self.settings.setValue("last_config_file", self.config_file)
         self.settings.setValue("log_dir", self.log_dir)
         self.settings.setValue("backup_dir", self.backup_dir)
         self.settings.setValue("max_backups", self.max_backups)
         self.settings.setValue("backup_interval", self.backup_interval)
 
         # Save the config file
-        with open(self.config_path, 'w') as f:
+        with open(os.path.join(resource_dir, self.config_file), 'w') as f:
             yaml.dump(self.config_data, f)
 
         # Makes a log of the new configuration
         logger, console_msg = setup_logging(self.config_data['log_dir'])
-        logger.info(f"Configuration saved to {self.config_path}")
+        logger.info(f"Configuration saved to {os.path.join(resource_dir, self.config_file)}")
         # super().close()
 
 
@@ -575,7 +572,7 @@ if __name__ == '__main__':
 
     # Load the last config file used
     settings = QSettings('SpeedyIQA', 'ImageViewer')
-    config_file = settings.value('config_file', os.path.join(default_dir, 'config.yml'))
+    config_file = settings.value('last_config_file', os.path.join(default_dir, 'config.yml'))
 
     # Create the configuration wizard
     wizard = ConfigurationWizard(config_file)

@@ -49,7 +49,7 @@ else:
     raise(FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
 
 outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
-config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+config_file = outer_setting.value("last_config_file", "config.yml")
 config = open_yml_file(os.path.join(resource_dir, config_file))
 logger, console_msg = setup_logging(os.path.expanduser(config['log_dir']), resource_dir)
 

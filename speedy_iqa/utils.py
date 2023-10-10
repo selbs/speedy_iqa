@@ -284,5 +284,6 @@ def find_relative_image_path(
 
     return all_images
 
+
 def invert_grayscale(image):
     return np.max(image) + np.min(image) - image
