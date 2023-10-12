@@ -132,9 +132,9 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
         # Create the initial dialog box
         load_msg_box = LoadMessageBox()
         result = load_msg_box.exec()
-        config_file = load_msg_box.config_combo.currentText()
+        config_filename = load_msg_box.config_combo.currentText()
         # print("main", config_file)
-        load_msg_box.save_last_config(config_file)
+        load_msg_box.save_last_config(config_filename)
 
         # User selects to `Ok` -> load the load dialog box
         if result == load_msg_box.DialogCode.Accepted:
@@ -171,7 +171,7 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
                 resource_dir = os.path.dirname(os.path.abspath("__main__"))
             else:
                 resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
-            wizard = ConfigurationWizard(os.path.join(resource_dir, config_file))
+            wizard = ConfigurationWizard(os.path.join(resource_dir, config_filename))
             result = wizard.exec()
             if result == 1:
                 continue

@@ -49,8 +49,8 @@ else:
     raise(FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
 
 outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
-config_file = outer_setting.value("last_config_file", "config.yml")
-config = open_yml_file(os.path.join(resource_dir, config_file))
+config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+config = open_yml_file(config_file)
 logger, console_msg = setup_logging(os.path.expanduser(config['log_dir']), resource_dir)
 
 class ClickableWidget(QWidget):
@@ -644,9 +644,8 @@ class MainApp(QMainWindow):
         :return: The config data
         :rtype: Dict
         """
-        last_config_file = self.settings.value("last_config_file", "config.yml")
-        conf_file = os.path.join(resource_dir, last_config_file)
-        return open_yml_file(conf_file)
+        last_config_file = self.settings.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+        return open_yml_file(last_config_file)
 
     def on_text_changed(self):
         """

@@ -255,7 +255,7 @@ class LoadMessageBox(QDialog):
 
         # Set the default value of the QComboBox to the last config file used
         last_config_file = self.settings.value("last_config_file", os.path.join(resource_dir, "config.yml"))
-        self.config_combo.setCurrentText(last_config_file)
+        self.config_combo.setCurrentText(os.path.basename(last_config_file))
 
         # Add the QComboBox to the dialog box
         config_layout = QVBoxLayout()
