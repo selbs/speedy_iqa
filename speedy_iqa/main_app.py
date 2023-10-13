@@ -739,9 +739,9 @@ class MainApp(QMainWindow):
         """
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
-        print(img_path)
-        print(img_extension)
-        print(self.reference_dir_path)
+        # print(img_path)
+        # print(img_extension)
+        # print(self.reference_dir_path)
 
         ## Uncomment this block if adding delimiter to reference name
         if self.reference_delimiter and self.reference_delimiter != "":
@@ -749,15 +749,17 @@ class MainApp(QMainWindow):
         else:
             reference_name = os.path.splitext(os.path.basename(self.file_list[self.current_index]))[0]
 
+        reference_name = os.path.basename(reference_name)
+
         if not reference_name.endswith(img_extension) and os.path.isfile(
                 os.path.join(self.reference_dir_path, reference_name + img_extension)
         ):
             reference_name = reference_name + img_extension
 
-        print(reference_name)
-        print(os.path.isfile(
-                os.path.join(self.reference_dir_path, reference_name + img_extension)
-        ))
+        # print(reference_name)
+        # print(os.path.isfile(
+        #         os.path.join(self.reference_dir_path, reference_name + img_extension)
+        # ))
 
         ## Comment out this line if adding delimiter to reference name
         # reference_name = os.path.basename(self.file_list[self.current_index])
@@ -794,10 +796,25 @@ class MainApp(QMainWindow):
         Checks the number of images without a reference image.
         """
         images_wout_ref = []
-        for file in self.file_list:
-            filename = os.path.basename(file)
-            if not os.path.isfile(os.path.join(self.reference_dir_path, filename)):
+        for i, file in enumerate(self.file_list):
+            img_extension = os.path.splitext(file)[1]
+            if self.reference_delimiter and self.reference_delimiter != "":
+                reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+            else:
+                reference_name = os.path.splitext(os.path.basename(self.file_list[self.current_index]))[0]
+            reference_name = os.path.basename(reference_name)
+            if not reference_name.endswith(img_extension) and os.path.isfile(
+                    os.path.join(self.reference_dir_path, reference_name + img_extension)
+            ):
+                reference_name = reference_name + img_extension
+            if not os.path.isfile(os.path.join(self.reference_dir_path, reference_name)):
                 images_wout_ref.append(file)
+            # if i == 0:
+            #     print(f"File: {file}")
+            #     print(f"Reference delimiter: {self.reference_delimiter}")
+            #     print(f"Reference name: {reference_name}")
+            #     print(f"Reference path: {os.path.join(self.reference_dir_path, reference_name)}")
+            #     print(f"Reference exists: {os.path.isfile(os.path.join(self.reference_dir_path, reference_name))}")
         return images_wout_ref
 
     def show_imgs_wout_ref_warning(self, imgs_wout):
@@ -807,8 +824,8 @@ class MainApp(QMainWindow):
         :param imgs_wout: The list of images without a reference image
         """
 
-        no_imgs_wout = len(imgs_wout)
-        total_no_imgs = len(self.file_list)
+        # no_imgs_wout = len(imgs_wout)
+        # total_no_imgs = len(self.file_list)
 
         unique_imgs = []
         for file in self.file_list:

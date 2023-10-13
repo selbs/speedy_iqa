@@ -25,7 +25,7 @@ import sys
 import json
 from qt_material import get_theme
 
-from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging
+from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, find_relative_image_path
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -847,9 +847,7 @@ class SetupWindow(QDialog):
 
             # Update label and save file path
             if folder_path:
-                img_files = [f for f in os.listdir(folder_path) if f.endswith((
-                    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.dcm', '.dicom',
-                ))]
+                img_files = find_relative_image_path(folder_path)
                 if len(img_files) == 0:
                     error_msg_box = QMessageBox()
                     error_msg_box.setIcon(QMessageBox.Icon.Warning)
