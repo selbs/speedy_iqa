@@ -10,6 +10,7 @@ Classes:
 import os
 import pydicom
 import numpy as np
+import pandas as pd
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
@@ -31,6 +32,7 @@ from random import Random
 from speedy_iqa.windows import AboutMessageBox, FileSelectionDialog
 from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale
 from speedy_iqa.utils import convert_to_checkstate, find_relative_image_path, invert_grayscale
+from speedy_iqa.utils import make_column_categorical, expand_dict_column
 from speedy_iqa.graphics import CustomGraphicsView
 
 if hasattr(sys, '_MEIPASS'):
@@ -239,6 +241,9 @@ class MainApp(QMainWindow):
             QKeySequence.StandardKey.Save
         ])
         self.file_tool_bar.addAction(self.saveAction)
+        self.exportAction = QAction(self.icons['export'], "Export to CSV File", self)
+        self.file_tool_bar.addAction(self.exportAction)
+        self.exportAction.setShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_E))
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.file_tool_bar)
 
         # Create the labelling toolbar
@@ -514,6 +519,7 @@ class MainApp(QMainWindow):
         self.connection_manager.connect(self.saveAction.triggered, self.save_to_json)
         self.connection_manager.connect(self.exitAction.triggered, self.quit_app)
         self.connection_manager.connect(self.logoAction.triggered, self.show_about)
+        self.connection_manager.connect(self.exportAction.triggered, self.export_to_csv)
 
         self.connection_manager.connect(self.image_view.horizontalScrollBar().valueChanged,
                                         self.sync_horizontal_scrollbars)
@@ -739,9 +745,9 @@ class MainApp(QMainWindow):
         """
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
-        # print(img_path)
-        # print(img_extension)
-        # print(self.reference_dir_path)
+        print(img_path)
+        print(img_extension)
+        print(self.reference_dir_path)
 
         ## Uncomment this block if adding delimiter to reference name
         if self.reference_delimiter and self.reference_delimiter != "":
@@ -756,10 +762,10 @@ class MainApp(QMainWindow):
         ):
             reference_name = reference_name + img_extension
 
-        # print(reference_name)
-        # print(os.path.isfile(
-        #         os.path.join(self.reference_dir_path, reference_name + img_extension)
-        # ))
+        print(reference_name)
+        print(os.path.isfile(
+                os.path.join(self.reference_dir_path, reference_name + img_extension)
+        ))
 
         ## Comment out this line if adding delimiter to reference name
         # reference_name = os.path.basename(self.file_list[self.current_index])
@@ -768,8 +774,8 @@ class MainApp(QMainWindow):
         try:
             self.image = self.read_file(img_path, img_extension)
             self.reference_image = self.read_file(reference_path, img_extension)
+
         except Exception as e:
-            # TODO: Could add a quit button here - else could end in never ending loop of 'okays'
             # QMessageBox.critical(self, "Error", f"Failed to load file:\n{str(e)}",
             #                      QMessageBox.StandardButton.Ok,
             #                      defaultButton=QMessageBox.StandardButton.Ok)
@@ -1465,9 +1471,10 @@ class MainApp(QMainWindow):
         """
         Save as dialog.
         """
-        file_dialog = QFileDialog(self, 'Save to JSON', self.settings.value("default_directory", resource_dir),
-
-                                  'JSON Files (*.json)')
+        file_dialog = QFileDialog(self, 'Save to JSON', self.settings.value("default_directory", resource_dir))
+        mime_type_filters = ["application/json", "application/octet-stream"]
+        file_dialog.setMimeTypeFilters(mime_type_filters)
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
         file_dialog.setDefaultSuffix("json")
         file_dialog.selectFile('untitled.json')
@@ -1481,13 +1488,7 @@ class MainApp(QMainWindow):
         else:
             return False
 
-    def save_json(self, selected_file: str):
-        """
-        Saves the current outputs to a JSON file.
-
-        :param selected_file: Path to the file to save to
-        :type selected_file: str
-        """
+    def create_output_dictionary(self):
         data = {
             'image_directory': self.dir_path,
             'reference_image_directory': self.reference_dir_path,
@@ -1519,7 +1520,16 @@ class MainApp(QMainWindow):
                 'checkboxes': cbox_out,
                 'radiobuttons': radiobuttons_out,
             })
+        return data
 
+    def save_json(self, selected_file: str):
+        """
+        Saves the current outputs to a JSON file.
+
+        :param selected_file: Path to the file to save to
+        :type selected_file: str
+        """
+        data = self.create_output_dictionary()
         with open(selected_file, 'w') as file:
             json.dump(data, file, indent=2)
 
@@ -1563,6 +1573,46 @@ class MainApp(QMainWindow):
                         else:
                             self.radiobutton_values[filename] = {name: value}
             return True
+
+    def export_to_csv(self):
+        """
+        Export to csv dialog.
+        """
+        file_dialog = QFileDialog(self, 'Save to CSV File', self.settings.value("default_directory", resource_dir),
+                                  'CSV Files (*.csv);;All Files (*)')
+        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        file_dialog.setDefaultSuffix("csv")
+        file_dialog.selectFile('untitled.csv')
+        mime_type_filters = ["text/csv", "application/octet-stream"]
+        file_dialog.setMimeTypeFilters(mime_type_filters)
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+
+        if file_dialog.exec() == QFileDialog.DialogCode.Accepted:
+            save_path = file_dialog.selectedFiles()[0]
+            self.save_csv(save_path)
+            self.settings.setValue("default_directory", file_dialog.directory().path())
+            self.save_settings()
+            return True
+        else:
+            return False
+
+    def save_csv(self, selected_file: str):
+        """
+        Saves the current outputs to a CSV file.
+
+        :param selected_file: Path to the file to save to
+        :type selected_file: str
+        """
+        data = self.create_output_dictionary()
+        df = pd.DataFrame(data['files'])
+        df = df.drop("checkboxes", axis=1)
+
+        df, rb_cols = expand_dict_column(df, 'radiobuttons')
+
+        for col in rb_cols:
+            df = make_column_categorical(df, col)
+
+        df.to_csv(selected_file, index=False)
 
     def on_checkbox_changed(self, state: int):
         """
@@ -1658,6 +1708,9 @@ class MainApp(QMainWindow):
         help_menu.addAction(self.saveAction)
         file_menu.addAction(menu_save_as_action)
         help_menu.addAction(menu_save_as_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.exportAction)
+        help_menu.addAction(self.exportAction)
         file_menu.addSeparator()
         file_menu.addAction(self.exitAction)
         help_menu.addAction(self.exitAction)
@@ -1788,7 +1841,8 @@ class MainApp(QMainWindow):
             'auto_win': qta.icon("mdi.image-auto-adjust", color=icon_color),
             'viewed': qta.icon("mdi.checkbox-marked-circle", color="green", scale=2),
             'not_viewed': qta.icon("mdi.close-circle", color="red", scale=2),
-            'question': qta.icon("mdi.help-circle", color="white", scale=2)
+            'question': qta.icon("mdi.help-circle", color="white", scale=2),
+            'export': qta.icon("mdi.file-export", color=icon_color),
         }
 
     def set_action_icons(self):
@@ -1807,6 +1861,7 @@ class MainApp(QMainWindow):
         self.rotate_right_action.setIcon(self.icons['rot_right'])
         self.zoom_in_action.setIcon(self.icons['zoom_in'])
         self.zoom_out_action.setIcon(self.icons['zoom_out'])
+        self.exportAction.setIcon(self.icons['export'])
         # self.invert_action.setIcon(self.icons['inv'])
         # self.window_width_action.setIcon(self.icons['ww'])
         # self.window_center_action.setIcon(self.icons['wc'])

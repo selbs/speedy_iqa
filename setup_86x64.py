@@ -47,5 +47,6 @@ setup(
         "matplotlib>=3.4.3",
         "imageio>=2.31.0",
         "pillow>=10.0.0",
+        "pandas"
     ],
 )

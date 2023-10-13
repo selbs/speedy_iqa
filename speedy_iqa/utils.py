@@ -31,6 +31,7 @@ import sys
 import numpy as np
 from PIL import Image
 import glob
+import pandas as pd
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -287,3 +288,52 @@ def find_relative_image_path(
 
 def invert_grayscale(image):
     return np.max(image) + np.min(image) - image
+
+
+def expand_dict_column(df, column_name):
+    """
+    Expand a column containing dictionaries into new columns.
+
+    :param df: DataFrame containing the dictionary column.
+    :param column_name: Name of the column to expand.
+    :return: DataFrame with expanded columns.
+    :rtype: pandas.DataFrame
+    """
+    # Use apply to create a new DataFrame with the expanded columns
+    expanded_df = df[column_name].apply(pd.Series)
+
+    # Concatenate the expanded DataFrame with the original DataFrame
+    result_df = pd.concat([df, expanded_df], axis=1)
+
+    # Drop the original dictionary column
+    result_df.drop(column_name, axis=1, inplace=True)
+
+    new_columns = expanded_df.columns
+
+    for col in new_columns:
+        result_df = result_df.rename(columns={col: col.lower().replace(" ", "_")})
+    new_columns = [col.lower().replace(" ", "_") for col in new_columns]
+
+    return result_df, new_columns
+
+
+def make_column_categorical(df, column_name):
+    """
+    Convert a column with float values to categorical values '1', '2', '3', '4', and 'Blank'.
+
+    :param df: DataFrame containing the column to convert.
+    :param column_name: Name of the column to make categorical.
+    :return: DataFrame with the specified column as categorical.
+    :rtype: pandas.DataFrame
+    """
+    # Define the bin edges for categorization
+    bin_edges = [0, 1, 2, 3, 4, np.inf]
+
+    # Define labels for each category
+    labels = ['1', '2', '3', '4', 'Blank']
+
+    # Use pd.cut() to categorize the values
+    df[column_name] = pd.cut(df[column_name], bins=bin_edges, labels=labels, right=False)
+
+    return df
+
