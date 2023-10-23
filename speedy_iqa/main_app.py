@@ -189,6 +189,8 @@ class MainApp(QMainWindow):
 
         # Now set up the main window layout and toolbars
         self.main_layout = QHBoxLayout()
+        print("INITIAL CURRENT INDEX", self.current_index)
+        self.current_index = 0
         self.setWindowTitle(f"Speedy IQA - File: {self.file_list[self.current_index]}")
 
         # Create the image scene and set as the central widget
@@ -350,14 +352,20 @@ class MainApp(QMainWindow):
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_F),
             QKeySequence.StandardKey.Open
         ])
-        self.nextAction = QAction(self.icons['next'], "Next Unviewed Image", self)
+        self.nextAction = QAction(self.icons['next'], "Next Image", self)
         self.nextAction.setShortcuts([
             Qt.Key.Key_Right,
             Qt.Key.Key_Space,
             Qt.Key.Key_N
         ])
+        self.nextUnratedAction = QAction(self.icons['next_unrated'], "Next Unrated Image", self)
+        self.nextUnratedAction.setShortcuts([
+            QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Right),
+            QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Space),
+            QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N),
+        ])
 
-        action_width = self.labelling_toolbar.sizeHint().width() // 3
+        action_width = self.labelling_toolbar.sizeHint().width() // 4
 
         try:
             nav_bg_color1 = get_theme(self.settings.value("theme", 'dark_blue.xml'))['primaryLightColor']
@@ -386,6 +394,20 @@ class MainApp(QMainWindow):
                     QToolButton:hover {{border: none; border-radius: 5px;}}
                 """)
         self.nav_toolbar.addWidget(self.goToButton)
+
+        self.nextUnratedButton = QToolButton()
+        self.nextUnratedButton.setDefaultAction(self.nextUnratedAction)
+        self.nextUnratedButton.setFixedWidth(action_width)
+        # self.nextButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        # self.nextUnratedButton.setStyleSheet(f"""
+        #     QToolButton {{background-color: {nav_bg_color1}; border: none; border-radius: 5px;}}
+        #     QToolButton:hover {{border: none; border-radius: 5px; background-color: {nav_bg_color2};}}
+        # """)
+        self.nextUnratedButton.setStyleSheet(f"""
+                            QToolButton {{border: none; border-radius: 5px;}}
+                            QToolButton:hover {{border: none; border-radius: 5px;}}
+                        """)
+        self.nav_toolbar.addWidget(self.nextUnratedButton)
 
         self.nextButton = QToolButton()
         self.nextButton.setDefaultAction(self.nextAction)
@@ -512,10 +534,12 @@ class MainApp(QMainWindow):
         # self.connection_manager.connect(self.window_center_slider.valueChanged, self.update_image)
         # self.connection_manager.connect(self.window_width_slider.valueChanged, self.update_image)
         self.connection_manager.connect(self.nextAction.triggered, self.reset_window_sliders)
+        self.connection_manager.connect(self.nextUnratedAction.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.prevAction.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.prevAction.triggered, self.previous_image)
         self.connection_manager.connect(self.goToAction.triggered, self.go_to_image)
         self.connection_manager.connect(self.nextAction.triggered, self.next_image)
+        self.connection_manager.connect(self.nextUnratedAction.triggered, self.next_unrated_image)
         self.connection_manager.connect(self.saveAction.triggered, self.save_to_json)
         self.connection_manager.connect(self.exitAction.triggered, self.quit_app)
         self.connection_manager.connect(self.logoAction.triggered, self.show_about)
@@ -794,7 +818,8 @@ class MainApp(QMainWindow):
                 self.should_quit = "failed_to_load"
                 return
 
-            self.next_image(prev_failed=True)
+            self.viewed_values[self.file_list[self.current_index]] = "FAILED"
+            # self.next_image(prev_failed=True)
             logger.exception(f"Failed to load file: {img_path} - Message: {str(e)}")
 
     def check_no_of_images_wout_ref(self):
@@ -1007,6 +1032,13 @@ class MainApp(QMainWindow):
         if checked:
             self.radiobutton_values[self.file_list[self.current_index]][name] = id
 
+        if all(v is not None for v in self.radiobutton_values[self.file_list[self.current_index]].values()):
+            self.viewed_values[self.file_list[self.current_index]] = True
+            self.viewed_icon.setPixmap(
+                QPixmap(self.icons['viewed'].pixmap(self.file_tool_bar.iconSize() * 2) if self.is_image_viewed()
+                        else self.icons['not_viewed'].pixmap(self.file_tool_bar.iconSize() * 2))
+            )
+
     def uncheck_all_radiobuttons(self):
         """
         Unchecks all the radio buttons.
@@ -1066,7 +1098,7 @@ class MainApp(QMainWindow):
 
         self.viewed_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.viewed_label.setObjectName("viewed_label")
-        self.viewed_label.setText(("" if self.is_image_viewed() else "NOT ") + "PREVIOUSLY VIEWED")
+        self.viewed_label.setText(("" if self.is_image_viewed() else "NOT ") + "PREVIOUSLY RATED")
         layout.addWidget(self.viewed_label)
         self.viewed_icon.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.viewed_icon.setPixmap(
@@ -1255,15 +1287,16 @@ class MainApp(QMainWindow):
         if self.settings.contains('last_file') and self.settings.contains('last_index'):
             last_file = self.settings.value('last_file')
             last_index = self.settings.value('last_index')
-            self.current_index = self.file_list.index(last_file) if last_file in self.file_list else last_index
+            self.current_index = self.file_list.index(last_file) if last_file in self.file_list else (
+                last_index) if last_index < len(self.file_list) else 0
 
         # Create a new file list that puts unviewed files after the current file.
-        unviewed_files = [f for f in self.file_list[self.current_index + 1:] if not self.viewed_values[f]]
-        viewed_files = [f for f in self.file_list[:self.current_index + 1] if self.viewed_values[f]]
+        unviewed_files = [f for f in self.file_list if not self.viewed_values[f]]
+        # viewed_files = [f for f in self.file_list if self.viewed_values[f]]
         if len(unviewed_files) == 0:
-            QMessageBox.information(self, "All Images Viewed", "You have viewed all the images.")
-        else:
-            self.file_list = unviewed_files + viewed_files
+            QMessageBox.information(self, "All Images Rated", "You have rated all the images.")
+        # else:
+        #     self.file_list = unviewed_files + viewed_files
 
     def reset_window_sliders(self):
         """
@@ -1295,31 +1328,32 @@ class MainApp(QMainWindow):
         self.window_center_slider.setValue(int(window_level))
         self.window_width_slider.setValue(int(window_width))
 
-    def change_image(self, direction: str, go_to_index: Optional[int] = None, prev_failed: bool = False):
+    def change_image(self, direction: str, go_to_index: Optional[int] = None,
+                     # prev_failed: bool = False
+                     ):
         """
         Changes the current image in the file list based on the given direction.
 
-        :param direction: Either "previous" or "next" image
+        :param direction: Either "previous", "next_unrated" or "next" image
         :type direction: str
         :param go_to_index: Only applicable if direction is "go_to"
         :type go_to_index: Optional[int]
-        :param prev_failed: Only applicable if direction is "next"
-        :type prev_failed: bool
         """
-        if direction not in ("previous", "next", "go_to"):
+        if direction not in ("previous", "next", "go_to", "next_unrated"):
             raise ValueError("Invalid direction value. Expected 'previous' or 'next'.")
 
-        for cbox in self.findings:
-            # Set the checkbox value based on the stored value
-            checkbox_value = self.checkbox_values.get(self.file_list[self.current_index], False)[cbox]
-            print(cbox, checkbox_value)
+        # for cbox in self.findings:
+        #     # Set the checkbox value based on the stored value
+        #     checkbox_value = self.checkbox_values.get(self.file_list[self.current_index], False)[cbox]
+        #     # print(cbox, checkbox_value)
 
         # if direction == "previous":
         #     self.viewed_values[self.file_list[self.current_index]] = True
-        if not prev_failed:
-            self.viewed_values[self.file_list[self.current_index]] = True
-        else:
-            self.viewed_values[self.file_list[self.current_index]] = "FAILED"
+        if self.viewed_values[self.file_list[self.current_index]] != "FAILED":
+            if all(v is not None for v in self.radiobutton_values[self.file_list[self.current_index]].values()):
+                self.viewed_values[self.file_list[self.current_index]] = True
+            else:
+                self.viewed_values[self.file_list[self.current_index]] = False
 
         # Save current file and index
         self.save_settings()
@@ -1330,20 +1364,36 @@ class MainApp(QMainWindow):
                 self.current_index = len(self.file_list) - 1
         elif direction == "go_to":
             self.current_index = go_to_index
-        else:
-            # Find the index of the next unviewed file
-            next_unviewed_index = (self.current_index + 1) % len(self.file_list)
-            while next_unviewed_index != self.current_index and self.viewed_values[self.file_list[next_unviewed_index]]:
-                next_unviewed_index = (next_unviewed_index + 1) % len(self.file_list)
-
-            if next_unviewed_index == self.current_index:
+        elif direction == "next":
+            if self.current_index == len(self.file_list) - 1:
                 # All images have been viewed
                 QMessageBox.information(self, "All Images Viewed", "You have viewed all the images.")
-                self.current_index += 1
-                if self.current_index >= len(self.file_list):
-                    self.current_index = 0
+                self.current_index = 0
             else:
-                self.current_index = next_unviewed_index
+                self.current_index += 1
+        else:
+            # Find the index of the next unviewed file
+            unrated = [f for f in self.file_list[self.current_index + 1:] if not self.viewed_values[f]]
+            next_unrated = unrated[0] if len(unrated) > 0 else None
+            if next_unrated is None:
+                unrated = [f for f in self.file_list[0:self.current_index] if not self.viewed_values[f]]
+                next_unrated = unrated[0] if len(unrated) > 0 else None
+            if next_unrated is None:
+                # All images have been viewed
+                QMessageBox.information(self, "All Images Rated", "You have rated all the images.")
+
+            # next_unviewed_index = (self.current_index + 1) % len(self.file_list)
+            # while next_unviewed_index != self.current_index and self.viewed_values[self.file_list[next_unviewed_index]]:
+            #     next_unviewed_index = (next_unviewed_index + 1) % len(self.file_list)
+            #
+            # if next_unviewed_index == self.current_index:
+            #     # All images have been viewed
+            #     QMessageBox.information(self, "All Images Rated", "You have rated all the images.")
+            #     self.current_index += 1
+            #     if self.current_index >= len(self.file_list):
+            #         self.current_index = 0
+            # else:
+            #     self.current_index = next_unviewed_index
 
         self.load_file()
         self.apply_stored_rotation()
@@ -1365,7 +1415,7 @@ class MainApp(QMainWindow):
         self.set_checked_radiobuttons(1)
         self.set_checked_radiobuttons(2)
 
-        self.viewed_label.setText(("" if self.is_image_viewed() else "NOT ") + "PREVIOUSLY VIEWED")
+        self.viewed_label.setText(("" if self.is_image_viewed() else "NOT ") + "PREVIOUSLY RATED")
         self.viewed_icon.setPixmap(
             QPixmap(self.icons['viewed'].pixmap(self.file_tool_bar.iconSize() * 2) if self.is_image_viewed()
                     else self.icons['not_viewed'].pixmap(self.file_tool_bar.iconSize() * 2))
@@ -1381,14 +1431,17 @@ class MainApp(QMainWindow):
         """
         self.change_image("previous")
 
-    def next_image(self, prev_failed=False):
+    def next_image(self):
         """
         Loads the next image in the file list.
-
-        :param prev_failed: Whether the image previously failed to load
-        :type prev_failed: bool
         """
-        self.change_image("next", prev_failed)
+        self.change_image("next")
+
+    def next_unrated_image(self):
+        """
+        Loads the next unrated image in the file list.
+        """
+        self.change_image("next_unrated")
 
     def is_image_viewed(self) -> bool:
         """
@@ -1514,7 +1567,7 @@ class MainApp(QMainWindow):
 
             data['files'].append({
                 'filename': filename,
-                'viewed': viewed,
+                'rated': viewed,
                 'rotation': rotation,
                 'notes': notes,
                 'checkboxes': cbox_out,
@@ -1555,7 +1608,7 @@ class MainApp(QMainWindow):
 
             for entry in data['files']:
                 filename = entry['filename']
-                self.viewed_values[filename] = entry['viewed']
+                self.viewed_values[filename] = entry['rated']
                 self.rotation[filename] = entry['rotation']
                 self.notes[filename] = entry['notes']
 
@@ -1689,7 +1742,7 @@ class MainApp(QMainWindow):
             # self.reset_window_action, self.auto_window_action
         ]
 
-        nav_actions = [self.prevAction, self.nextAction, self.goToAction]
+        nav_actions = [self.prevAction, self.nextAction, self.nextUnratedAction, self.goToAction]
 
         # create the help menu
         help_menu = QMenu("Help", self)
@@ -1843,6 +1896,7 @@ class MainApp(QMainWindow):
             'not_viewed': qta.icon("mdi.close-circle", color="red", scale=2),
             'question': qta.icon("mdi.help-circle", color="white", scale=2),
             'export': qta.icon("mdi.file-export", color=icon_color),
+            'next_unrated': qta.icon("mdi.skip-next-circle", color=icon_color),
         }
 
     def set_action_icons(self):
@@ -1854,6 +1908,7 @@ class MainApp(QMainWindow):
         self.saveAction.setIcon(self.icons['save'])
         self.exitAction.setIcon(self.icons['exit'])
         self.nextAction.setIcon(self.icons['next'])
+        self.nextUnratedAction.setIcon(self.icons['next_unrated'])
         self.prevAction.setIcon(self.icons['prev'])
         # self.reset_window_action.setIcon(self.icons['reset_win'])
         # self.auto_window_action.setIcon(self.icons['auto_win'])
