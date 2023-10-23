@@ -1119,7 +1119,7 @@ class MainApp(QMainWindow):
         radiobutton_heading.setWordWrap(True)
         radiobutton_heading.setStyleSheet("QLabel { margin-right: 10px; }")
         radiobutton_heading.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        layout.addWidget(radiobutton_heading)
+        self.page1_layout.addWidget(radiobutton_heading)
 
         h_text_layout1 = QHBoxLayout()
         instructions1 = QLabel(self)
