@@ -1166,6 +1166,15 @@ class MainApp(QMainWindow):
         self.page1.setLayout(self.page1_layout)
         self.page1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
+        radiobutton_heading2 = QLabel(self)
+        radiobutton_heading2.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        radiobutton_heading2.setText(
+            f"Please rate the image quality in comparison to the reference:".upper())
+        radiobutton_heading2.setWordWrap(True)
+        radiobutton_heading2.setStyleSheet("QLabel { margin-right: 10px; }")
+        radiobutton_heading2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.page2_layout.addWidget(radiobutton_heading2)
+
         h_text_layout2 = QHBoxLayout()
         instructions2 = QLabel(self)
         instructions2.setAlignment(Qt.AlignmentFlag.AlignLeft)
