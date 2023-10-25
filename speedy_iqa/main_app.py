@@ -1240,7 +1240,7 @@ class MainApp(QMainWindow):
         self.textbox.setMinimumHeight(50)
         self.textbox.setMaximumHeight(150)
         self.textbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
-        self.connection_manager.connect(self.textbox.textChanged, self.on_text_changed)
+        # self.connection_manager.connect(self.textbox.textChanged, self.on_text_changed)
         layout.addWidget(self.textbox)
 
         self.labelling_toolbar.addWidget(layout_widget)
@@ -1435,6 +1435,8 @@ class MainApp(QMainWindow):
         self.update_progress_text()
         percent_viewed = 100*len([value for value in self.viewed_values.values() if value])/len(self.file_list)
         self.update_progress_bar(percent_viewed)
+
+        self.textbox.setPlainText(self.notes[self.file_list[self.current_index]])
 
     def previous_image(self):
         """
