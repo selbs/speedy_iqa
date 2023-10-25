@@ -1051,6 +1051,15 @@ class MainApp(QMainWindow):
                         button.setChecked(False)
                     button_group.setExclusive(True)
 
+    def uncheck_all_radiobuttons_in_group(self, button_group):
+        """
+        Unchecks all the radio buttons.
+        """
+        button_group.setExclusive(False)
+        for button in button_group.buttons():
+            button.setChecked(False)
+        button_group.setExclusive(True)
+
     def update_all_radiobutton_values(self):
         """
         Updates the values of all the radio buttons.
@@ -1070,7 +1079,8 @@ class MainApp(QMainWindow):
                     self.radiobutton_values.get(self.file_list[self.current_index]).get(name)
                 ).setChecked(True)
             else:
-                self.uncheck_all_radiobuttons()
+                self.uncheck_all_radiobuttons_in_group(self.radiobuttons[page][name])
+                # self.uncheck_all_radiobuttons()
 
     def set_labelling_toolbar(self):
         """
