@@ -1390,6 +1390,8 @@ class MainApp(QMainWindow):
             if next_unrated is None:
                 # All images have been viewed
                 QMessageBox.information(self, "All Images Rated", "You have rated all the images.")
+            else:
+                self.current_index = self.file_list.index(next_unrated)
 
             # next_unviewed_index = (self.current_index + 1) % len(self.file_list)
             # while next_unviewed_index != self.current_index and self.viewed_values[self.file_list[next_unviewed_index]]:
