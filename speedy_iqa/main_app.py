@@ -43,23 +43,29 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.realpath(__file__))):
 elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     # This is a regular Python script
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
-elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa'):
+elif 'main.py' in os.listdir(os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')):
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
-elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa'):
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa')
 else:
     raise(FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
 
+resource_dir = os.path.normpath(os.path.abspath(resource_dir))
+
 outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
-config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+config_file = os.path.abspath(os.path.abspath(
+    outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+))
 config = open_yml_file(config_file)
-logger, console_msg = setup_logging(os.path.expanduser(config['log_dir']), resource_dir)
+logger, console_msg = setup_logging(
+    os.path.normpath(os.path.expanduser(os.path.abspath(config['log_dir']))),
+)
+
 
 class ClickableWidget(QWidget):
     clicked = pyqtSignal()
 
     def mouseReleaseEvent(self, QMouseEvent):
         self.clicked.emit()
+
 
 class MainApp(QMainWindow):
     """
@@ -99,6 +105,10 @@ class MainApp(QMainWindow):
         self.checkbox_values = {}
         self.radiobutton_values = {}
         self.file_list = []
+        self.default_groupbox_color = None
+        self.highlighted_groupbox_color = None
+        self.highlighted_opacity = 0.15
+        self.highlighted_radiogroup = None
 
         # Load the configuration file
         config = self.open_config_yml()
@@ -108,8 +118,7 @@ class MainApp(QMainWindow):
         # self.task = "medical diagnosis"
         self.tristate_checkboxes = config.get('tristate_checkboxes', False)
         self.max_backups = config.get('max_backups', 10)
-        self.backup_dir = config.get('backup_dir', os.path.expanduser('~/speedy_iqa/backups'))
-        self.backup_dir = os.path.expanduser(self.backup_dir)
+        self.backup_dir = os.path.normpath(os.path.expanduser(config.get('backup_dir', '~/speedy_iqa/backups')))
         self.backup_interval = config.get('backup_interval', 5)
         self.task = config.get('task', 'General use')
 
@@ -118,7 +127,7 @@ class MainApp(QMainWindow):
 
         if not self.loaded:
 
-            self.dir_path = self.settings.value("image_path", ".")
+            self.dir_path = os.path.normpath(os.path.abspath(self.settings.value("image_path", ".")))
             if not os.path.isdir(self.dir_path):
                 if os.path.isdir(os.path.dirname(self.dir_path)):
                     self.dir_path = os.path.dirname(self.dir_path)
@@ -128,7 +137,9 @@ class MainApp(QMainWindow):
             self.file_list = sorted(find_relative_image_path(self.dir_path))
             Random(4).shuffle(self.file_list)
 
-            self.reference_dir_path = self.settings.value("reference_path", ".")
+            self.reference_dir_path = os.path.normpath(
+                os.path.abspath(self.settings.value("reference_path", "."))
+            )
             self.reference_delimiter = self.settings.value("reference_delimiter", "__")
 
             imgs_wout_ref = self.check_no_of_images_wout_ref()
@@ -173,7 +184,7 @@ class MainApp(QMainWindow):
         self.set_icons()
 
         # Set the window icon
-        icon_path = os.path.join(resource_dir, 'assets/logo.icns')
+        icon_path = os.path.normpath(os.path.abspath(os.path.join(resource_dir, 'assets/logo.icns')))
         self.setWindowIcon(QIcon(icon_path))
 
         # Set the central widget to the image viewer
@@ -189,7 +200,7 @@ class MainApp(QMainWindow):
 
         # Now set up the main window layout and toolbars
         self.main_layout = QHBoxLayout()
-        print("INITIAL CURRENT INDEX", self.current_index)
+        # print("INITIAL CURRENT INDEX", self.current_index)
         self.current_index = 0
         self.setWindowTitle(f"Speedy IQA - File: {self.file_list[self.current_index]}")
 
@@ -217,7 +228,7 @@ class MainApp(QMainWindow):
         self.file_tool_bar = QToolBar(self)
 
         # Create the logo action
-        logo_path = os.path.join(resource_dir, 'assets/logo.png')
+        logo_path = os.path.normpath(os.path.abspath(os.path.join(resource_dir, 'assets/logo.png')))
         img = iio.imread(logo_path)
         # Pad the logo to make it square for QIcon, otherwise it will be stretched
         height, width, _ = img.shape
@@ -453,6 +464,9 @@ class MainApp(QMainWindow):
         self.update_progress_bar(percent_viewed)
         self.change_theme(self.settings.value("theme", "dark_blue.xml"))
 
+        self.highlighted_radiogroup = list(self.radiobuttons_boxes[self.stack.currentIndex()+1].keys())[0]
+        self.highlight_radiogroup()
+
         QTimer.singleShot(0, self.set_items_on_initial_size)
 
         self.central_resize_timer = QTimer()
@@ -544,6 +558,7 @@ class MainApp(QMainWindow):
         self.connection_manager.connect(self.exitAction.triggered, self.quit_app)
         self.connection_manager.connect(self.logoAction.triggered, self.show_about)
         self.connection_manager.connect(self.exportAction.triggered, self.export_to_csv)
+        self.connection_manager.connect(self.next_unviewed_button.clicked, self.nextUnratedAction.trigger)
 
         self.connection_manager.connect(self.image_view.horizontalScrollBar().valueChanged,
                                         self.sync_horizontal_scrollbars)
@@ -608,7 +623,7 @@ class MainApp(QMainWindow):
         :rtype: List[str]
         """
 
-        backup_folder_path = self.backup_dir
+        backup_folder_path = os.path.normpath(self.backup_dir)
         # Create the backup folder if it doesn't exist
         os.makedirs(backup_folder_path, exist_ok=True)
 
@@ -674,7 +689,9 @@ class MainApp(QMainWindow):
         :return: The config data
         :rtype: Dict
         """
-        last_config_file = self.settings.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+        last_config_file = os.path.normpath(
+            self.settings.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+        )
         return open_yml_file(last_config_file)
 
     def on_text_changed(self):
@@ -702,7 +719,7 @@ class MainApp(QMainWindow):
                 qimage = array2qimage(inverted_image)
                 pixmap = QPixmap.fromImage(qimage)
                 if i == 0:
-                    print(image)
+                    # print(image)
                     self.pixmap_item.setPixmap(pixmap)
                     self.image = inverted_image
                 else:
@@ -769,9 +786,9 @@ class MainApp(QMainWindow):
         """
         img_path = os.path.join(self.dir_path, self.file_list[self.current_index])
         img_extension = os.path.splitext(img_path)[1]
-        print(img_path)
-        print(img_extension)
-        print(self.reference_dir_path)
+        # print(img_path)
+        # print(img_extension)
+        # print(self.reference_dir_path)
 
         ## Uncomment this block if adding delimiter to reference name
         if self.reference_delimiter and self.reference_delimiter != "":
@@ -786,10 +803,10 @@ class MainApp(QMainWindow):
         ):
             reference_name = reference_name + img_extension
 
-        print(reference_name)
-        print(os.path.isfile(
-                os.path.join(self.reference_dir_path, reference_name + img_extension)
-        ))
+        # print(reference_name)
+        # print(os.path.isfile(
+        #         os.path.join(self.reference_dir_path, reference_name + img_extension)
+        # ))
 
         ## Comment out this line if adding delimiter to reference name
         # reference_name = os.path.basename(self.file_list[self.current_index])
@@ -993,6 +1010,15 @@ class MainApp(QMainWindow):
         :type options_list: list
         """
         group_box = QGroupBox(name)
+        default_gb_color = group_box.palette().color(group_box.backgroundRole())
+        self.default_groupbox_color = (f"rgba({default_gb_color.red()}, "
+                                           f"{default_gb_color.green()}, "
+                                           f"{default_gb_color.blue()}, "
+                                           f"{0})")
+        self.highlighted_groupbox_color = (f"rgba({default_gb_color.red()}, "
+                                           f"{default_gb_color.green()}, "
+                                           f"{default_gb_color.blue()}, "
+                                           f"{int(default_gb_color.alpha() * self.highlighted_opacity)})")
         group_box.setStyleSheet("QGroupBox { font-size: 14px; }")
         options = [str(option) for option in options_list]
         max_label_length = max([len(label) for label in options])
@@ -1017,6 +1043,8 @@ class MainApp(QMainWindow):
         self.set_checked_radiobuttons(page)
         self.connection_manager.connect(self.radiobuttons[page][name].idToggled,
                                         partial(self.on_radiobutton_changed, name))
+        self.connection_manager.connect(self.radiobuttons[page][name].idClicked,
+                                        partial(self.highlight_next_radiogroup, name))
 
     def on_radiobutton_changed(self, name, id, checked):
         """
@@ -1038,6 +1066,37 @@ class MainApp(QMainWindow):
                 QPixmap(self.icons['viewed'].pixmap(self.file_tool_bar.iconSize() * 2) if self.is_image_viewed()
                         else self.icons['not_viewed'].pixmap(self.file_tool_bar.iconSize() * 2))
             )
+
+    def highlight_next_radiogroup(self, name):
+        """
+        Highlights the next radio group.
+
+        :param name: Name of the radio button group
+        :type name: str
+        """
+        radiobuttons_boxes_keylist = list(self.radiobuttons_boxes[self.stack.currentIndex()+1].keys())
+        current_index = radiobuttons_boxes_keylist.index(name)
+        if current_index + 1 < len(radiobuttons_boxes_keylist):
+            self.highlighted_radiogroup = radiobuttons_boxes_keylist[current_index + 1]
+        else:
+            self.highlighted_radiogroup = radiobuttons_boxes_keylist[0]
+        self.highlight_radiogroup()
+
+    def highlight_radiogroup(self):
+        """
+        Highlights the next radio group.
+        """
+        for name, group_box in self.radiobuttons_boxes[self.stack.currentIndex()+1].items():
+            if name == self.highlighted_radiogroup:
+                group_box.setStyleSheet(
+                    f"QGroupBox {{ font-size: 14px; "
+                    f"background-color: {self.highlighted_groupbox_color}; }}"
+                )
+            else:
+                group_box.setStyleSheet(
+                    f"QGroupBox {{ font-size: 14px; "
+                    f"background-color: {self.default_groupbox_color}; }}"
+                )
 
     def uncheck_all_radiobuttons(self):
         """
@@ -1082,6 +1141,25 @@ class MainApp(QMainWindow):
                 self.uncheck_all_radiobuttons_in_group(self.radiobuttons[page][name])
                 # self.uncheck_all_radiobuttons()
 
+    def open_page2_if_required_and_page1_complete(self):
+        """
+        Opens page 2 if required and page 1 is complete.
+        """
+        if 1 in self.radiobuttons:
+            for name in self.radiobuttons[1].keys():
+                if self.radiobutton_values.get(self.file_list[self.current_index]).get(name) is None:
+                    self.show_page1()
+                    self.highlighted_radiogroup = list(self.radiobuttons[1].keys())[0]
+                    self.highlight_radiogroup()
+                    return
+        if 2 in self.radiobuttons:
+            for name in self.radiobuttons[2].keys():
+                if self.radiobutton_values.get(self.file_list[self.current_index]).get(name) is None:
+                    self.show_page2()
+                    self.highlighted_radiogroup = list(self.radiobuttons[2].keys())[0]
+                    self.highlight_radiogroup()
+        return
+
     def set_labelling_toolbar(self):
         """
         Sets the checkbox toolbar.
@@ -1093,39 +1171,39 @@ class MainApp(QMainWindow):
         # Ensure it can only be added to the left or right side
         self.labelling_toolbar.setAllowedAreas(Qt.ToolBarArea.LeftToolBarArea | Qt.ToolBarArea.RightToolBarArea)
 
-        layout_widget = QWidget()
-        layout = QVBoxLayout(layout_widget)
-        # scroll = QScrollArea(self)
-        # scroll.setWidgetResizable(True)
-        # scroll.setWidget(layout_widget)
-        # scroll.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        self.labelling_toolbar.addWidget(splitter)
+
+        main_content_widget = QWidget()
+        main_content_layout = QVBoxLayout(main_content_widget)
 
         spacer1 = QWidget()
         spacer1.setMinimumHeight(10)
         spacer1.setMaximumHeight(30)
         spacer1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout.addWidget(spacer1)
+        main_content_layout.addWidget(spacer1)
 
         self.viewed_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.viewed_label.setObjectName("viewed_label")
         self.viewed_label.setText(("" if self.is_image_viewed() else "NOT ") + "PREVIOUSLY RATED")
-        layout.addWidget(self.viewed_label)
+        main_content_layout.addWidget(self.viewed_label)
         self.viewed_icon.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.viewed_icon.setPixmap(
             QPixmap(self.icons['viewed'].pixmap(self.file_tool_bar.iconSize() * 2) if self.is_image_viewed()
                     else self.icons['not_viewed'].pixmap(self.file_tool_bar.iconSize() * 2))
         )
-        layout.addWidget(self.viewed_icon)
+        main_content_layout.addWidget(self.viewed_icon)
 
         spacer2 = QWidget()
         spacer2.setMinimumHeight(10)
         spacer2.setMaximumHeight(30)
         spacer2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout.addWidget(spacer2)
+        main_content_layout.addWidget(spacer2)
 
         radiobutton_heading = QLabel(self)
         radiobutton_heading.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        radiobutton_heading.setText(f"For {self.task}, please rate the image quality in comparison to the reference:".upper())
+        radiobutton_heading.setText(f"For {self.task}, please rate the image quality in "
+                                    f"comparison to the reference:".upper())
         radiobutton_heading.setWordWrap(True)
         radiobutton_heading.setStyleSheet("QLabel { margin-right: 10px; }")
         radiobutton_heading.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1224,36 +1302,61 @@ class MainApp(QMainWindow):
         # instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
         # self.page2_layout.addWidget(instructions2)
 
-        button = QPushButton('Back to 1/2', clicked=self.show_page1)
+        page2_button_layout = QHBoxLayout()
+
+
+        # button = QPushButton('Back to 1/2', clicked=self.show_page1)
+        button = QPushButton('Back', clicked=self.show_page1)
         button.setStyleSheet("font-size: 14px;")
-        self.page2_layout.addWidget(button)
+        page2_button_layout.addWidget(button)
+
+        # self.nextUnratedButton = QToolButton()
+        # self.nextUnratedButton.setDefaultAction(self.nextUnratedAction)
+        # self.nextUnratedButton.setFixedWidth(action_width)
+
+        # self.next_unviewed_button = QToolButton()
+        self.next_unviewed_button = QPushButton('Next Unrated')
+        # self.next_unviewed_button.setStyleSheet("font-size: 14px;")
+        page2_button_layout.addWidget(self.next_unviewed_button)
+
+        # self.page2_layout.addWidget(button)
+        self.page2_layout.addLayout(page2_button_layout)
+
         self.page2.setLayout(self.page2_layout)
         self.page2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.stack.addWidget(self.page1)
         self.stack.addWidget(self.page2)
 
-        layout.addWidget(self.stack)
+        main_content_layout.addWidget(self.stack)
 
-        spacer3 = QWidget()
-        spacer3.setMinimumHeight(0)
-        spacer3.setMaximumHeight(10)
-        spacer3.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout.addWidget(spacer3)
+        # spacer3 = QWidget()
+        # spacer3.setMinimumHeight(0)
+        # spacer3.setMaximumHeight(10)
+        # spacer3.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        # layout.addWidget(spacer3)
 
         # Add the Notes textbox
         self.textbox_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.textbox_label.setObjectName("Notes")
         self.textbox_label.setText("NOTES:")
-        layout.addWidget(self.textbox_label)
+        # notes_layout.addWidget(self.textbox_label)
+
         self.textbox.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         self.textbox.setMinimumHeight(50)
-        self.textbox.setMaximumHeight(150)
+        # self.textbox.setMaximumHeight(150)
         self.textbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
-        # self.connection_manager.connect(self.textbox.textChanged, self.on_text_changed)
-        layout.addWidget(self.textbox)
 
-        self.labelling_toolbar.addWidget(layout_widget)
+        textbox_widget = QWidget()
+        textbox_layout = QVBoxLayout(textbox_widget)
+        textbox_layout.addWidget(self.textbox_label)
+        textbox_layout.addWidget(self.textbox)
+        splitter.addWidget(textbox_widget)
+
+        splitter.addWidget(main_content_widget)
+        splitter.addWidget(textbox_widget)
+
+        # self.labelling_toolbar.addWidget(layout_widget)
         self.labelling_toolbar.setStyleSheet("QToolBar QLabel { font-weight: bold; font-size: 14px; }")
         # scroll_action = QWidgetAction(self)
         # scroll_action.setDefaultWidget(scroll)
@@ -1291,12 +1394,16 @@ class MainApp(QMainWindow):
         Shows the first page of the stacked widget.
         """
         self.stack.setCurrentIndex(0)
+        self.highlighted_radiogroup = list(self.radiobuttons_boxes[self.stack.currentIndex()+1].keys())[0]
+        self.highlight_radiogroup()
 
     def show_page2(self):
         """
         Shows the second page of the stacked widget.
         """
         self.stack.setCurrentIndex(1)
+        self.highlighted_radiogroup = list(self.radiobuttons_boxes[self.stack.currentIndex()+1].keys())[0]
+        self.highlight_radiogroup()
 
     def restore_from_saved_state(self):
         """
@@ -1442,6 +1549,10 @@ class MainApp(QMainWindow):
                     else self.icons['not_viewed'].pixmap(self.file_tool_bar.iconSize() * 2))
         )
 
+        self.open_page2_if_required_and_page1_complete()
+        self.highlighted_radiogroup = list(self.radiobuttons_boxes[self.stack.currentIndex()+1].keys())[0]
+        self.highlight_radiogroup()
+
         self.update_progress_text()
         percent_viewed = 100*len([value for value in self.viewed_values.values() if value])/len(self.file_list)
         self.update_progress_bar(percent_viewed)
@@ -1482,7 +1593,7 @@ class MainApp(QMainWindow):
         for cbox in self.findings:
             # Set the checkbox value based on the stored value
             checkbox_value = self.checkbox_values.get(filename, False)[cbox]
-            print(cbox, checkbox_value)
+            # print(cbox, checkbox_value)
             self.checkboxes[cbox].setCheckState(convert_to_checkstate(checkbox_value))
 
     # def keyPressEvent(self, event: QKeyEvent):
@@ -1517,6 +1628,23 @@ class MainApp(QMainWindow):
     #             self.quit_app()
     #     else:
     #         super().keyPressEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent):
+        key = event.key()
+
+        if Qt.Key.Key_1 <= key <= Qt.Key.Key_4:
+            if key == Qt.Key.Key_1:
+                self.radiobuttons[self.stack.currentIndex()+1][self.highlighted_radiogroup].button(0).setChecked(True)
+                self.highlight_next_radiogroup(self.highlighted_radiogroup)
+            elif key == Qt.Key.Key_2:
+                self.radiobuttons[self.stack.currentIndex()+1][self.highlighted_radiogroup].button(1).setChecked(True)
+                self.highlight_next_radiogroup(self.highlighted_radiogroup)
+            elif key == Qt.Key.Key_3:
+                self.radiobuttons[self.stack.currentIndex()+1][self.highlighted_radiogroup].button(2).setChecked(True)
+                self.highlight_next_radiogroup(self.highlighted_radiogroup)
+            elif key == Qt.Key.Key_4:
+                self.radiobuttons[self.stack.currentIndex()+1][self.highlighted_radiogroup].button(3).setChecked(True)
+                self.highlight_next_radiogroup(self.highlighted_radiogroup)
 
     def save_settings(self):
         """

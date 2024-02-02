@@ -37,9 +37,9 @@ else:
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
 
 outer_setting = QSettings('SpeedyIQA', 'ImageViewer')
-config_file = outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml"))
+config_file = os.path.normpath(outer_setting.value("last_config_file", os.path.join(resource_dir, "config.yml")))
 config_data = open_yml_file(os.path.join(resource_dir, config_file))
-logger, console_msg = setup_logging(config_data['log_dir'])
+logger, console_msg = setup_logging(os.path.normpath(config_data['log_dir']))
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable

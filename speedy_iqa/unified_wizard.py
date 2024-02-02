@@ -1,16 +1,8 @@
 """
-wizard.py
+unified_wizard.py
 
-This module provides a configuration wizard for the Speedy IQA application, allowing users
-to customize various settings such as checkbox labels, maximum number of backup files,
-and directories for backup and log files. The wizard can be run from the initial dialog
-box of the application, from the command line, or from Python.
-
-Classes:
-    - RadioButtonPage: A QWizardPage class implementation for selecting a radio button.
-    - RadioButtonGroupDialog: A QDialog class implementation for selecting a radio button.
-    - ConfigurationWizard: A QWizard class implementation to guide users through the process of
-                           customizing the application configuration.
+This is an updated version of the ConfigurationWizard class from speedy_iqa/config_wizard.py. It allows users to
+customize the configuration of the Speedy IQA application without the need to restart the application.
 """
 
 from PyQt6.QtCore import *
@@ -20,7 +12,6 @@ import yaml
 import os
 from qt_material import apply_stylesheet, get_theme
 import sys
-from math import ceil
 
 from speedy_iqa.utils import open_yml_file, setup_logging, ConnectionManager
 
@@ -34,10 +25,10 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa'):
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
-elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa'):
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa')
 else:
     raise (FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
+
+resource_dir = os.path.normpath(os.path.abspath(resource_dir))
 
 
 class AdvancedSettingsDialog(QDialog):
@@ -47,8 +38,8 @@ class AdvancedSettingsDialog(QDialog):
         self.wiz = unified_page_instance.wiz
         self.settings = unified_page_instance.settings
         self.connection_manager = unified_page_instance.connection_manager
-        self.log_dir = self.wiz.log_dir
-        self.backup_dir = self.wiz.backup_dir
+        self.log_dir = os.path.normpath(self.wiz.log_dir)
+        self.backup_dir = os.path.normpath(self.wiz.backup_dir)
         self.backup_interval = self.wiz.backup_interval
         self.max_backups = self.wiz.max_backups
         self.setWindowTitle("Advanced Settings")
@@ -140,7 +131,7 @@ class AdvancedSettingsDialog(QDialog):
         self.log_dir_layout = QHBoxLayout()
         log_dir_label = QLabel("Log directory:")
         self.log_dir_edit = QLineEdit()
-        self.log_dir_edit.setText(self.settings.value("log_dir", os.path.expanduser(self.log_dir)))
+        self.log_dir_edit.setText(self.settings.value("log_dir", os.path.normpath(os.path.expanduser(self.log_dir))))
         self.log_dir_layout.addWidget(log_dir_label)
         self.log_dir_layout.addWidget(self.log_dir_edit)
         self.log_layout.addLayout(self.log_dir_layout)
@@ -162,7 +153,9 @@ class AdvancedSettingsDialog(QDialog):
         backup_dir_layout = QHBoxLayout()
         backup_dir_label = QLabel("Backup directory:")
         self.backup_dir_edit = QLineEdit()
-        self.backup_dir_edit.setText(self.settings.value("backup_dir", os.path.expanduser(self.backup_dir)))
+        self.backup_dir_edit.setText(self.settings.value("backup_dir", os.path.normpath(
+            os.path.expanduser(self.backup_dir)
+        )))
         backup_dir_layout.addWidget(backup_dir_label)
         backup_dir_layout.addWidget(self.backup_dir_edit)
         self.backup_layout.addLayout(backup_dir_layout)
@@ -232,8 +225,8 @@ class AdvancedSettingsDialog(QDialog):
             self.wiz.config_filename = self.filename_edit.text()
         else:
             self.wiz.config_filename = self.config_files_combobox.currentText()
-        self.wiz.log_dir = self.log_dir_edit.text()
-        self.wiz.backup_dir = self.backup_dir_edit.text()
+        self.wiz.log_dir = os.path.normpath(self.log_dir_edit.text())
+        self.wiz.backup_dir = os.path.normpath(self.backup_dir_edit.text())
         self.wiz.backup_interval = self.backup_int_spinbox.value()
         self.wiz.max_backups = self.backup_spinbox.value()
         super().close()
@@ -464,12 +457,12 @@ class ConfigurationWizard(QWizard):
         self.setOption(QWizard.WizardOption.IndependentPages, True)
 
         # Set the logo pixmap
-        icon_path = os.path.join(resource_dir, 'assets/logo.png')
+        icon_path = os.path.normpath(os.path.join(resource_dir, 'assets/logo.png'))
         pixmap = QPixmap(icon_path)
         self.setPixmap(QWizard.WizardPixmap.LogoPixmap, pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
 
         # Load the config file
-        self.config_data = open_yml_file(os.path.join(resource_dir, self.config_filename))
+        self.config_data = open_yml_file(os.path.normpath(os.path.join(resource_dir, self.config_filename)))
 
         for i in range(self.nradio_pages):
             self.radio_buttons[i] = self.config_data.get(f'radiobuttons_page{i + 1}', [])
@@ -484,8 +477,12 @@ class ConfigurationWizard(QWizard):
                 ]
         self.max_backups = self.config_data.get('max_backups', 10)
         self.backup_interval = self.config_data.get('backup_interval', 5)
-        self.backup_dir = self.config_data.get('backup_dir', os.path.expanduser('~/speedy_iqa/backups'))
-        self.log_dir = self.config_data.get('log_dir', os.path.expanduser('~/speedy_iqa/logs'))
+        self.backup_dir = os.path.normpath(
+            self.config_data.get('backup_dir', os.path.normpath(os.path.expanduser('~/speedy_iqa/backups')))
+        )
+        self.log_dir = os.path.normpath(
+            self.config_data.get('log_dir', os.path.normpath(os.path.expanduser('~/speedy_iqa/logs')))
+        )
         self.task = self.settings.value("task", self.config_data.get('task', 'General use'))
 
         self.main_page = self.create_unified_page()
@@ -500,7 +497,6 @@ class ConfigurationWizard(QWizard):
         self.setMinimumSize(600, 540)
 
         self.connection_manager.connect(self.finished, self.save_config)
-
 
     def create_unified_page(self):
         page = UnifiedOptionsPage(self)
@@ -537,8 +533,8 @@ class ConfigurationWizard(QWizard):
                 {'title': title, 'labels': [1, 2, 3, 4]} for title in titles
             ]
 
-        self.config_data['log_dir'] = self.log_dir
-        self.config_data['backup_dir'] = self.backup_dir
+        self.config_data['log_dir'] = os.path.normpath(os.path.abspath(self.log_dir))
+        self.config_data['backup_dir'] = os.path.normpath(os.path.abspath(self.backup_dir))
         self.config_data['max_backups'] = self.max_backups
         self.config_data['backup_interval'] = self.backup_interval
 
@@ -546,18 +542,20 @@ class ConfigurationWizard(QWizard):
             self.config_filename += '.yml'
 
         self.settings.setValue('task', self.task)
-        self.settings.setValue("last_config_file", os.path.join(resource_dir, self.config_filename))
-        self.settings.setValue("log_dir", self.log_dir)
-        self.settings.setValue("backup_dir", self.backup_dir)
+        self.settings.setValue("last_config_file", os.path.normpath(
+            os.path.join(os.path.normpath(os.path.abspath(resource_dir)), self.config_filename))
+                               )
+        self.settings.setValue("log_dir", os.path.normpath(os.path.abspath(self.log_dir)))
+        self.settings.setValue("backup_dir", os.path.normpath(os.path.abspath(self.backup_dir)))
         self.settings.setValue("max_backups", self.max_backups)
         self.settings.setValue("backup_interval", self.backup_interval)
 
         # Save the config file
-        with open(os.path.join(resource_dir, self.config_filename), 'w') as f:
+        with open(os.path.join(os.path.abspath(resource_dir), self.config_filename), 'w') as f:
             yaml.dump(self.config_data, f)
 
         # Makes a log of the new configuration
-        logger, console_msg = setup_logging(self.config_data['log_dir'])
+        logger, console_msg = setup_logging(os.path.normpath(self.config_data['log_dir']))
         logger.info(f"Configuration saved to {os.path.join(resource_dir, self.config_filename)}")
         # super().close()
 
@@ -572,7 +570,7 @@ if __name__ == '__main__':
 
     # Load the last config file used
     settings = QSettings('SpeedyIQA', 'ImageViewer')
-    config_file = settings.value('last_config_file', os.path.join(resource_dir, 'config.yml'))
+    config_file = settings.value('last_config_file', os.path.normpath(os.path.join(resource_dir, 'config.yml')))
 
     # Create the configuration wizard
     wizard = ConfigurationWizard(config_file)

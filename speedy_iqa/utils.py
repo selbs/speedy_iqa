@@ -22,7 +22,7 @@ Functions:
     convert_to_checkstate(value: Any) -> Qt.CheckState
 """
 
-import logging.config
+# import logging.config
 import yaml
 import os
 from typing import Dict, Union, Any, Optional, Tuple, List, Collection
@@ -32,6 +32,10 @@ import numpy as np
 from PIL import Image
 import glob
 import pandas as pd
+import logging
+from logging import FileHandler, StreamHandler
+import sys
+
 
 if hasattr(sys, '_MEIPASS'):
     # This is a py2app executable
@@ -43,10 +47,10 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa'):
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
-elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa'):
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa')
 else:
     raise(FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
+
+resource_dir = os.path.normpath(os.path.abspath(resource_dir))
 
 
 class Connection:
@@ -108,14 +112,14 @@ def create_default_config() -> Dict:
             {'title': "Artefacts", 'labels': [1, 2, 3, 4]},
         ],
         'max_backups': 10,
-        'backup_dir': os.path.expanduser('~/speedy_iqa/backups'),
-        'log_dir': os.path.expanduser('~/speedy_iqa/logs'),
+        'backup_dir': os.path.normpath(os.path.expanduser('~/speedy_iqa/backups')),
+        'log_dir': os.path.normpath(os.path.expanduser('~/speedy_iqa/logs')),
         # 'tristate_checkboxes': True,
         'backup_interval': 5,
         'task': 'General use',
     }
 
-    save_path = os.path.join(resource_dir, 'config.yml')
+    save_path = os.path.normpath(os.path.join(resource_dir, 'config.yml'))
 
     # Save the default config to the speedy_iqa directory
     with open(save_path, 'w') as f:
@@ -136,46 +140,83 @@ def open_yml_file(config_path: str) -> Dict:
     # print("Resource directory:", resource_dir)
     # print("*"*50)
 
-    if not os.path.isfile(config_path):
+    if not os.path.isfile(os.path.normpath(config_path)):
         # If the config file does not exist, look for the default config file
-        print(f"Could not find config file at {config_path}")
-        if os.path.isfile(os.path.join(resource_dir, 'config.yml')):
+        print(f"Could not find config file at {os.path.normpath(config_path)}")
+        if os.path.isfile(os.path.normpath(os.path.join(resource_dir, 'config.yml'))):
             print(f"Using default config file at "
-                  f"{os.path.join(resource_dir, 'config.yml')}")
-            config_path = os.path.join(resource_dir, 'config.yml')
+                  f"{os.path.normpath(os.path.join(resource_dir, 'config.yml'))}")
+            config_path = os.path.normpath(os.path.join(resource_dir, 'config.yml'))
             with open(config_path, 'r') as f:
                 config_data = yaml.safe_load(f)
         else:
             # If the default config file does not exist, create a new one
-            print(f"Could not find default config file at {os.path.join(resource_dir, 'config.yml')}")
+            print(f"Could not find default config file at {os.path.normpath(os.path.join(resource_dir, 'config.yml'))}")
             print(f"Creating a new default config file at "
-                  f"{os.path.join(resource_dir, 'config.yml')}")
+                  f"{os.path.normpath(os.path.join(resource_dir, 'config.yml'))}")
             config_data = create_default_config()
     else:
         # Open the config file and load the data
-        with open(config_path, 'r') as f:
+        with open(os.path.normpath(config_path), 'r') as f:
             config_data = yaml.safe_load(f)
 
     return config_data
 
 
-def setup_logging(log_out_path: str, resource_directory: str = resource_dir) -> Tuple[logging.Logger, logging.Logger]:
+def setup_logging(log_out_path: str) -> Tuple[logging.Logger, logging.Logger]:
     """
-    Sets up the logging for the application. The log file will be saved in the log_out_path in the directory
-    specified in the chosen config .yml file.
+    Sets up the logging for the application. Creates two loggers: one for logging to a file and another for console
+    output. Changed from using a .conf file due to issues with making it OS-agnostic.
 
-    :param log_out_path: str, the path to the directory where the log file will be saved.
-    :param resource_directory: str, the path to the resource directory.
-    :return: tuple (logger, console_msg), where logger is a configured logging.Logger instance, and console_msg is a
-             reference to the same logger to be used for console messaging.
+    :param log_out_path: The path to the directory where the log file will be saved. :param resource_directory: The
+        path to the resource directory, not directly used here but can be utilized for additional configurations.
+    :param resource_directory: The path to the resource directory.
+    :return: A tuple (file_logger, console_logger), where file_logger is configured to log to a file,
+        and console_logger is configured for console output.
     """
-    full_log_file_path = os.path.expanduser(os.path.join(log_out_path, "speedy_iqa.log"))
+    full_log_file_path = os.path.normpath(os.path.expanduser(os.path.join(log_out_path, "speedy_iqa.log")))
     os.makedirs(os.path.dirname(full_log_file_path), exist_ok=True)
-    logging.config.fileConfig(os.path.join(resource_directory, 'log.conf'),
-                              defaults={'log_file_path': full_log_file_path})
-    logger = logging.getLogger(__name__)
-    console_msg = logging.getLogger(__name__)
-    return logger, console_msg
+
+    # Configure logger for file output
+    file_logger = logging.getLogger('fileLogger')
+    file_logger.setLevel(logging.DEBUG)
+    file_logger.propagate = False
+    fileHandler = FileHandler(full_log_file_path, mode='a')
+    fileHandler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+    )
+    file_logger.addHandler(fileHandler)
+
+    # Configure logger for console output
+    console_logger = logging.getLogger('consoleLogger')
+    console_logger.setLevel(logging.DEBUG)
+    console_logger.propagate = False
+    consoleHandler = StreamHandler(sys.stdout)
+    consoleHandler.setFormatter(
+        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+    )
+    console_logger.addHandler(consoleHandler)
+
+    return file_logger, console_logger
+
+
+# def setup_logging(log_out_path: str, resource_directory: str = resource_dir) -> Tuple[logging.Logger, logging.Logger]:
+#     """
+#     Sets up the logging for the application. The log file will be saved in the log_out_path in the directory
+#     specified in the chosen config .yml file.
+#
+#     :param log_out_path: str, the path to the directory where the log file will be saved.
+#     :param resource_directory: str, the path to the resource directory.
+#     :return: tuple (logger, console_msg), where logger is a configured logging.Logger instance, and console_msg is a
+#              reference to the same logger to be used for console messaging.
+#     """
+#     full_log_file_path = os.path.normpath(os.path.expanduser(os.path.join(log_out_path, "speedy_iqa.log")))
+#     os.makedirs(os.path.dirname(os.path.abspath(os.path.normpath(full_log_file_path))), exist_ok=True)
+#     logging.config.fileConfig(os.path.join(os.path.normpath(resource_directory), 'log.conf'),
+#                               defaults={'log_file_path': os.path.normpath(full_log_file_path)})
+#     logger = logging.getLogger(__name__)
+#     console_msg = logging.getLogger(__name__)
+#     return logger, console_msg
 
 
 def bytescale(

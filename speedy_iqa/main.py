@@ -42,10 +42,21 @@ elif 'main.py' in os.listdir(os.path.dirname(os.path.abspath("__main__"))):
     resource_dir = os.path.dirname(os.path.abspath("__main__"))
 elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa'):
     resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
-elif 'main.py' in os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa'):
-    resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa', 'speedy_iqa')
 else:
     raise(FileNotFoundError(f"Resource directory not found from {os.path.dirname(os.path.abspath('__main__'))}"))
+
+resource_dir = os.path.normpath(resource_dir)
+
+
+def qt_message_handler(mode, context, message):
+    if "no target window" in message:
+        return  # Filter out the specific warning
+    else:
+        # Default behavior for other messages
+        sys.stderr.write(f"{message}\n")
+
+
+qInstallMessageHandler(qt_message_handler)
 
 
 def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
@@ -74,8 +85,6 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
         """
         # Cleanup load intro window
         try:
-            # This might raise an exception if setup_window was never created,
-            # so we catch the exception and ignore it.
             load_msg_box.close()
             load_msg_box.deleteLater()
         except NameError:
@@ -83,8 +92,6 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
 
         # Cleanup main window
         try:
-            # This might raise an exception if setup_window was never created,
-            # so we catch the exception and ignore it.
             window.close()
             window.deleteLater()
         except NameError:
@@ -92,8 +99,6 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
 
         # Cleanup setup window
         try:
-            # This might raise an exception if setup_window was never created,
-            # so we catch the exception and ignore it.
             setup_window.close()
             setup_window.deleteLater()
         except NameError:
@@ -101,8 +106,6 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
 
         # Cleanup wizard
         try:
-            # This might raise an exception if wizard was never created,
-            # so we catch the exception and ignore it.
             wizard.close()
             wizard.deleteLater()
         except NameError:
@@ -171,6 +174,7 @@ def main(theme='qt_material', material_theme=None, icon_theme='qtawesome'):
                 resource_dir = os.path.dirname(os.path.abspath("__main__"))
             else:
                 resource_dir = os.path.join(os.path.dirname(os.path.abspath("__main__")), 'speedy_iqa')
+            resource_dir = os.path.normpath(resource_dir)
             wizard = ConfigurationWizard(os.path.join(resource_dir, config_filename))
             result = wizard.exec()
             if result == 1:
