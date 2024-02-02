@@ -52,6 +52,9 @@ cd speedy_iqa
 pip install .
 ```
 
+If you encounter issues with the installation, it is likely due to the `Qt` environment paths and further info is 
+provided below in the [Installation and QT dependency issues](#installation-and-qt-dependency-issues) section.
+
 Usage
 -----
 
@@ -80,24 +83,30 @@ delimiter should be left blank.
 
 Radiobutton outputs are stored as integers in the output json file.
 
+The radiobuttons can be selected using the keyboard (i.e. 1, 2, 3, 4) or by clicking on the buttons with the mouse. 
+When inputting from the keyboard, the selected radiobutton group is highlighted. When a button is clicked, it 
+automatically moves to the next group.
+
 ### Progress
 
 Your progress through the folder of images is shown in the progress bar at the bottom of the window.
 
 ### Keyboard Shortcuts
 
-|                      Key                      |       Action        |
-|:---------------------------------------------:|:-------------------:|
-|                 <kbd>B</kbd>                  |   Previous image    |
-|       <kbd>N</kbd> or <kbd>Space</kbd>        |     Next image      |
-|          <kbd>+</kbd> / <kbd>=</kbd>          |       Zoom in       |
-|          <kbd>-</kbd> / <kbd>_</kbd>          |      Zoom out       |
-|                 <kbd>R</kbd>                  | Rotate images right |
-|                 <kbd>L</kbd>                  | Rotate images left  |
-|                 <kbd>S</kbd>                  |        Save         |
-| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd> |        Quit         |
+|                                                      Key                                                       |       Action        |
+|:--------------------------------------------------------------------------------------------------------------:|:-------------------:|
+|            <kbd>←</kbd> / <kbd>B</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> / <kbd>Back</kbd>            |   Previous image    |
+|              <kbd>→</kbd> /<kbd>N</kbd> / <kbd>Space</kbd> / <kbd>Enter</kbd> / <kbd>Return</kbd>              |     Next image      |
+| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>→</kbd>/<kbd>N</kbd>/<kbd>Space</kbd>/<kbd>Enter</kbd>/<kbd>Return</kbd> | Next unrated image  |
+|                             <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>                             | Select radiobutton  |
+|                                          <kbd>+</kbd> / <kbd>=</kbd>                                           |       Zoom in       |
+|                                          <kbd>-</kbd> / <kbd>_</kbd>                                           |      Zoom out       |
+|                                                  <kbd>R</kbd>                                                  | Rotate images right |
+|                                                  <kbd>L</kbd>                                                  | Rotate images left  |
+|                                                  <kbd>S</kbd>                                                  |        Save         |
+|                                 <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd>                                  |        Quit         |
 
-Note: <kbd>Cmd</kbd> + Scroll and <kbd>Shift</kbd> + Scroll are only currently available on Mac OS X.
+[//]: # (Note: <kbd>Cmd</kbd> + Scroll and <kbd>Shift</kbd> + Scroll are only currently available on Mac OS X.)
 
 Backup Files
 ------------
@@ -181,3 +190,93 @@ If using a arm64 Mac, the libffi library will be installed in the `/opt/homebrew
 version will be installed in the `/usr/local/opt` directory. The `setup_86x64.py` and `setup_arm64.py` scripts
 have been configured to look for the library in the `/opt/homebrew` directory. If the library is installed in a
 different directory, the `setup_86x64.py` and `setup_arm64.py` scripts will need to be modified accordingly.
+
+Installation and QT dependency issues
+-------------------------------------
+
+A new function on initiating the program will hopefully configure the environment to ensure it uses the Qt
+package installed in the virtual environment as part of PyQt6.
+
+However, if you encounter issues with the installation, it is likely due to the `Qt` dependency and is usually a result
+of:
+- the environment PATH variable including another instance of Qt or an incompatible version of Qt; or
+- the system failing to find the Qt libraries.
+
+Further information may be found in the 
+[PyQt5 documentation](https://www.riverbankcomputing.com/static/Docs/PyQt6/installation.html).
+
+## Checking the PATH variable
+
+You can check the PATH variable by running the following command in the terminal:
+
+```console
+echo $PATH
+```
+
+If you see a path to a Qt installation, you can remove it from the PATH variable by editing the `.bashrc`, `.bash_profile`,
+`.zshrc`, or equivalent shell configuration file and removing the Qt path to the PATH variable.
+
+You can add the desired QT path to the PATH variable using the following command:
+
+```console
+export PATH="/usr/lib/qt/bin:$PATH"
+```
+replace `/usr/lib/qt/bin` with the path to the Qt installation.
+
+To add the path to the PATH variable permanently, you can add the command to the `.bashrc`, `.bash_profile`, `.zshrc`, or
+equivalent shell configuration file with a command like:
+  
+```console
+echo 'export PATH="/usr/lib/qt/bin:$PATH"' >> ~/.zshrc
+```
+
+To make these changes take effect, you can either restart your terminal or source your profile with a command like:
+
+```console
+source ~/.zshrc
+```
+
+## Installing Qt separately
+
+If all else fails, you can install try installing Qt6 separately and setting the environment variables accordingly. You 
+can install Qt from either their [website](https://doc.qt.io/qt-6/get-and-install-qt.html), using 
+`sudo apt-get install qt6-default` on Ubuntu and other Debian-based systems, or using Homebrew on Mac.
+
+### Installing Qt6 on Mac OS X with Homebrew
+
+```console
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+brew update
+
+brew install qt
+```
+or to ensure you get the version 6:
+```console
+brew install qt@6
+```
+
+After the installation is complete, you'll need to add the Qt binaries to your PATH. *Homebrew will 
+display instructions for this at the end of the installation*, but you can also get the path using:
+
+```console
+brew --prefix qt
+```
+
+Typically, you can add it to your `.bashrc`, `.bash_profile`, `.zshrc`, or equivalent 
+shell configuration file with a command like the following, Replace .zshrc with .bash_profile or another relevant file 
+if you are using a different shell:
+
+```console
+echo 'export PATH="/usr/lib/qt/bin:$PATH"' >> ~/.zshrc
+```
+or for Apple Silicon / ARM Macs:
+```console
+echo 'export PATH="/usr/local/opt/qt/bin:$PATH"' >> ~/.zshrc
+```
+
+To make these changes take effect, you can either restart your terminal or source your profile with a command like:
+
+```console
+source ~/.zshrc
+```

@@ -22,6 +22,33 @@ Usage:
 
 import sys
 import os
+
+
+def configure_qt_environment():
+    """
+    Configures the environment for PyQt6 to ensure it uses the Qt version from the virtual environment.
+
+    :return: None
+    """
+    # Assuming this script is run within a virtual environment, locate the site-packages directory.
+    venv_path = sys.prefix
+    bin_path = os.path.join(venv_path, 'bin')
+    qt_path = None
+    if os.path.isdir(os.path.join(venv_path, 'lib', 'python' + sys.version[:3], 'site-packages', 'PyQt6', 'Qt6')):
+        qt_path = os.path.join(venv_path, 'lib', 'python' + sys.version[:3], 'site-packages', 'PyQt6', 'Qt6')
+    elif os.path.isdir(os.path.join(venv_path, 'lib', 'site-packages', 'PyQt6', 'Qt6')):
+        qt_path = os.path.join(venv_path, 'lib', 'site-packages', 'PyQt6', 'Qt6')
+    elif os.path.isdir(os.path.join(venv_path, 'lib', 'PyQt6', 'Qt')):
+        qt_path = os.path.join(venv_path, 'lib', 'PyQt6', 'Qt')
+
+    qt_plugin_path = os.path.join(qt_path, 'plugins') if qt_path is not None else None
+
+    # Set the QT_PLUGIN_PATH environment variable to the PyQt6 plugins directory.
+    os.environ['PATH'] = bin_path
+    os.environ['QTDIR'] = qt_path
+    os.environ['QT_PLUGIN_PATH'] = qt_plugin_path
+
+
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
