@@ -4,7 +4,7 @@ setup(
     author='Ian Selby',
     author_email='ias49@cam.ac.uk',
     description='Tool to label images against a reference image for image quality assessment',
-    name='Speedy IQA',
+    name='SpeedyIQA',
     url='https://github.com/selbs/speedy_iqa',
     use_scm_version=True,
     setup_requires=["setuptools_scm>=7.0.4"],
