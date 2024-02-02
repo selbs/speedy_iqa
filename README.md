@@ -53,7 +53,7 @@ pip install .
 ```
 
 If you encounter issues with the installation, it is likely due to the `Qt` environment paths and further info is 
-provided below in the [Installation and QT dependency issues](#installation-and-qt-dependency-issues) section.
+provided below in the [QT dependency issues](#qt-dependency-issues) section.
 
 Usage
 -----
@@ -191,8 +191,8 @@ version will be installed in the `/usr/local/opt` directory. The `setup_86x64.py
 have been configured to look for the library in the `/opt/homebrew` directory. If the library is installed in a
 different directory, the `setup_86x64.py` and `setup_arm64.py` scripts will need to be modified accordingly.
 
-Installation and QT dependency issues
--------------------------------------
+QT dependency issues
+--------------------
 
 A new function on initiating the program will hopefully configure the environment to ensure it uses the Qt
 package installed in the virtual environment as part of PyQt6.
