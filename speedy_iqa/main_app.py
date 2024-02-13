@@ -376,7 +376,6 @@ class MainApp(QMainWindow):
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Right),
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Space),
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N),
-            QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Enter),
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Return),
         ])
 
@@ -1409,6 +1408,15 @@ class MainApp(QMainWindow):
         self.highlighted_radiogroup = list(self.radiobuttons_boxes[self.stack.currentIndex()+1].keys())[0]
         self.highlight_radiogroup()
 
+    def go_to_next_page_or_image(self):
+        """
+        Goes to the next page or image.
+        """
+        if self.stack.currentIndex() == 0:
+            self.show_page2()
+        else:
+            self.change_image("next_unrated")
+
     def restore_from_saved_state(self):
         """
         Restores the state of the application from the saved state.
@@ -1649,6 +1657,9 @@ class MainApp(QMainWindow):
             elif key == Qt.Key.Key_4:
                 self.radiobuttons[self.stack.currentIndex()+1][self.highlighted_radiogroup].button(3).setChecked(True)
                 self.highlight_next_radiogroup(self.highlighted_radiogroup)
+
+        elif key == QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Enter):
+            self.go_to_next_page_or_image()
 
     def save_settings(self):
         """
