@@ -1311,7 +1311,6 @@ class MainApp(QMainWindow):
 
             page2_button_layout = QHBoxLayout()
 
-
             # button = QPushButton('Back to 1/2', clicked=self.show_page1)
             button = QPushButton('Back', clicked=self.show_page1)
             button.setStyleSheet("font-size: 14px;")
@@ -1334,9 +1333,9 @@ class MainApp(QMainWindow):
 
             self.stack.addWidget(self.page2)
         else:
-            button = QPushButton('Next Unrated', clicked=self.next_unrated_image)
-            button.setStyleSheet("font-size: 14px;")
-            self.page1_layout.addWidget(button)
+            self.next_unviewed_button = QPushButton('Next Unrated', clicked=self.next_unrated_image)
+            self.next_unviewed_button.setStyleSheet("font-size: 14px;")
+            self.page1_layout.addWidget(self.next_unviewed_button)
 
         main_content_layout.addWidget(self.stack)
 
@@ -1419,7 +1418,7 @@ class MainApp(QMainWindow):
         """
         Goes to the next page or image.
         """
-        if self.stack.currentIndex() == 0 and self.radiobutton_groups2 is not None:
+        if self.stack.currentIndex() == 0 and bool(self.radiobutton_groups2):
             self.show_page2()
         else:
             self.change_image("next_unrated")
