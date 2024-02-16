@@ -1252,36 +1252,39 @@ class MainApp(QMainWindow):
         # spacer4.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # layout.addWidget(spacer4)
 
-        button = QPushButton('Continue to 2/2', clicked=self.show_page2)
-        button.setStyleSheet("font-size: 14px;")
-        self.page1_layout.addWidget(button)
+        if bool(self.radiobutton_groups2):
+            button = QPushButton('Continue to 2/2', clicked=self.show_page2)
+            button.setStyleSheet("font-size: 14px;")
+            self.page1_layout.addWidget(button)
+
         self.page1.setLayout(self.page1_layout)
         self.page1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.stack.addWidget(self.page1)
 
-        radiobutton_heading2 = QLabel(self)
-        radiobutton_heading2.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        radiobutton_heading2.setText(
-            f"Please rate the image quality in comparison to the reference:".upper())
-        radiobutton_heading2.setWordWrap(True)
-        radiobutton_heading2.setStyleSheet("QLabel { margin-right: 10px; }")
-        radiobutton_heading2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.page2_layout.addWidget(radiobutton_heading2)
+        if bool(self.radiobutton_groups2):
+            radiobutton_heading2 = QLabel(self)
+            radiobutton_heading2.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            radiobutton_heading2.setText(
+                f"Please rate the image quality in comparison to the reference:".upper())
+            radiobutton_heading2.setWordWrap(True)
+            radiobutton_heading2.setStyleSheet("QLabel { margin-right: 10px; }")
+            radiobutton_heading2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.page2_layout.addWidget(radiobutton_heading2)
 
-        h_text_layout2 = QHBoxLayout()
-        instructions2 = QLabel(self)
-        instructions2.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
-        instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-        # self.page2_layout.addWidget(instructions2)
-        h_text_layout2.addWidget(instructions2)
-        page_label2 = QLabel(self)
-        page_label2.setAlignment(Qt.AlignmentFlag.AlignRight)
-        page_label2.setText("2/2")
-        page_label2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-        h_text_layout2.addWidget(page_label2)
-        self.page2_layout.addLayout(h_text_layout2)
+            h_text_layout2 = QHBoxLayout()
+            instructions2 = QLabel(self)
+            instructions2.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
+            instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+            # self.page2_layout.addWidget(instructions2)
+            h_text_layout2.addWidget(instructions2)
+            page_label2 = QLabel(self)
+            page_label2.setAlignment(Qt.AlignmentFlag.AlignRight)
+            page_label2.setText("2/2")
+            page_label2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+            h_text_layout2.addWidget(page_label2)
+            self.page2_layout.addLayout(h_text_layout2)
 
-        if self.radiobutton_groups2 is not None:
             radiobutton_widget2 = QWidget()
             radiobutton_widget2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             radiobutton_layout2 = QVBoxLayout()
@@ -1300,37 +1303,40 @@ class MainApp(QMainWindow):
             # # Add the scroll area to the page layout
             self.page2_layout.addWidget(scroll2)
 
-        # instructions2 = QLabel(self)
-        # instructions2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        # instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
-        # instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-        # self.page2_layout.addWidget(instructions2)
+            # instructions2 = QLabel(self)
+            # instructions2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            # instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
+            # instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
+            # self.page2_layout.addWidget(instructions2)
 
-        page2_button_layout = QHBoxLayout()
+            page2_button_layout = QHBoxLayout()
 
 
-        # button = QPushButton('Back to 1/2', clicked=self.show_page1)
-        button = QPushButton('Back', clicked=self.show_page1)
-        button.setStyleSheet("font-size: 14px;")
-        page2_button_layout.addWidget(button)
+            # button = QPushButton('Back to 1/2', clicked=self.show_page1)
+            button = QPushButton('Back', clicked=self.show_page1)
+            button.setStyleSheet("font-size: 14px;")
+            page2_button_layout.addWidget(button)
 
-        # self.nextUnratedButton = QToolButton()
-        # self.nextUnratedButton.setDefaultAction(self.nextUnratedAction)
-        # self.nextUnratedButton.setFixedWidth(action_width)
+            # self.nextUnratedButton = QToolButton()
+            # self.nextUnratedButton.setDefaultAction(self.nextUnratedAction)
+            # self.nextUnratedButton.setFixedWidth(action_width)
 
-        # self.next_unviewed_button = QToolButton()
-        self.next_unviewed_button = QPushButton('Next Unrated')
-        # self.next_unviewed_button.setStyleSheet("font-size: 14px;")
-        page2_button_layout.addWidget(self.next_unviewed_button)
+            # self.next_unviewed_button = QToolButton()
+            self.next_unviewed_button = QPushButton('Next Unrated')
+            # self.next_unviewed_button.setStyleSheet("font-size: 14px;")
+            page2_button_layout.addWidget(self.next_unviewed_button)
 
-        # self.page2_layout.addWidget(button)
-        self.page2_layout.addLayout(page2_button_layout)
+            # self.page2_layout.addWidget(button)
+            self.page2_layout.addLayout(page2_button_layout)
 
-        self.page2.setLayout(self.page2_layout)
-        self.page2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            self.page2.setLayout(self.page2_layout)
+            self.page2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.stack.addWidget(self.page1)
-        self.stack.addWidget(self.page2)
+            self.stack.addWidget(self.page2)
+        else:
+            button = QPushButton('Next Unrated', clicked=self.next_unrated_image)
+            button.setStyleSheet("font-size: 14px;")
+            self.page1_layout.addWidget(button)
 
         main_content_layout.addWidget(self.stack)
 
@@ -1413,7 +1419,7 @@ class MainApp(QMainWindow):
         """
         Goes to the next page or image.
         """
-        if self.stack.currentIndex() == 0:
+        if self.stack.currentIndex() == 0 and self.radiobutton_groups2 is not None:
             self.show_page2()
         else:
             self.change_image("next_unrated")
