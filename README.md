@@ -93,18 +93,19 @@ Your progress through the folder of images is shown in the progress bar at the b
 
 ### Keyboard Shortcuts
 
-|                                                      Key                                                       |       Action        |
-|:--------------------------------------------------------------------------------------------------------------:|:-------------------:|
-|            <kbd>←</kbd> / <kbd>B</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> / <kbd>Back</kbd>            |   Previous image    |
-|              <kbd>→</kbd> /<kbd>N</kbd> / <kbd>Space</kbd> / <kbd>Enter</kbd> / <kbd>Return</kbd>              |     Next image      |
-| <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>→</kbd>/<kbd>N</kbd>/<kbd>Space</kbd>/<kbd>Enter</kbd>/<kbd>Return</kbd> | Next unrated image  |
-|                             <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>                             | Select radiobutton  |
-|                                          <kbd>+</kbd> / <kbd>=</kbd>                                           |       Zoom in       |
-|                                          <kbd>-</kbd> / <kbd>_</kbd>                                           |      Zoom out       |
-|                                                  <kbd>R</kbd>                                                  | Rotate images right |
-|                                                  <kbd>L</kbd>                                                  | Rotate images left  |
-|                                                  <kbd>S</kbd>                                                  |        Save         |
-|                                 <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd>                                  |        Quit         |
+|                                           Key                                            |       Action        |
+|:----------------------------------------------------------------------------------------:|:-------------------:|
+|                           <kbd>Enter</kbd> / <kbd>Return</kbd>                           | Next page / unrated |
+| <kbd>←</kbd> / <kbd>B</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> / <kbd>Back</kbd> |   Previous image    |
+|                      <kbd>→</kbd> /<kbd>N</kbd> / <kbd>Space</kbd>                       |     Next image      |
+|       <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>→</kbd>/<kbd>N</kbd>/<kbd>Space</kbd>        | Next unrated image  |
+|                  <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>                  | Select radiobutton  |
+|                               <kbd>+</kbd> / <kbd>=</kbd>                                |       Zoom in       |
+|                               <kbd>-</kbd> / <kbd>_</kbd>                                |      Zoom out       |
+|                                       <kbd>R</kbd>                                       | Rotate images right |
+|                                       <kbd>L</kbd>                                       | Rotate images left  |
+|                                       <kbd>S</kbd>                                       |        Save         |
+|                      <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Q</kbd>                       |        Quit         |
 
 [//]: # (Note: <kbd>Cmd</kbd> + Scroll and <kbd>Shift</kbd> + Scroll are only currently available on Mac OS X.)
 
