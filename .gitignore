@@ -87,4 +87,4 @@ celerybeat-schedule
 .DS_Store
 
 # Pycharm files
-.idea/
+.idea/!/speedy_iqa/main_app.py
