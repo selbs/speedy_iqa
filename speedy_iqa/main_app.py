@@ -802,7 +802,7 @@ class MainApp(QMainWindow):
 
         ## Uncomment this block if adding delimiter to reference name
         if self.reference_delimiter and self.reference_delimiter != "":
-            reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+            reference_name = os.path.basename(self.file_list[self.current_index]).split(self.reference_delimiter)[0]
         else:
             reference_name = os.path.splitext(os.path.basename(self.file_list[self.current_index]))[0]
 
