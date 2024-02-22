@@ -496,7 +496,13 @@ class MainApp(QMainWindow):
         window_width = self.width() - labelling_toolbar_width - 100
         window_aspect_ratio = window_width / window_height
 
-        if (window_aspect_ratio >= 1 and image_aspect_ratio >= 1) or (window_aspect_ratio < 1 and image_aspect_ratio < 1):
+        screen_aspect_ratio = self.screen().size().width() / self.screen().size().height()
+
+        if (
+                window_aspect_ratio >= screen_aspect_ratio and image_aspect_ratio >= screen_aspect_ratio
+        ) or (
+                window_aspect_ratio < screen_aspect_ratio and image_aspect_ratio < screen_aspect_ratio
+        ):
             # Both the window and the image are landscape, or both are portrait
             layout = QHBoxLayout()
         else:
