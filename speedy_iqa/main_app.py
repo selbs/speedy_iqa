@@ -823,10 +823,9 @@ class MainApp(QMainWindow):
 
         reference_path = os.path.join(self.reference_dir_path, reference_name)
 
-        print(f"Image Path: {img_path}")
-        print(f"Reference Path: {reference_path}")
-        print(f"Reference Name: {reference_name}")
-
+        # print(f"Image Path: {img_path}")
+        # print(f"Reference Path: {reference_path}")
+        # print(f"Reference Name: {reference_name}")
 
         try:
             self.image = self.read_file(img_path, img_extension)
@@ -863,7 +862,7 @@ class MainApp(QMainWindow):
         for i, file in enumerate(self.file_list):
             img_extension = os.path.splitext(file)[1]
             if self.reference_delimiter and self.reference_delimiter != "":
-                reference_name = self.file_list[self.current_index].split(self.reference_delimiter)[0]
+                reference_name = self.file_list[self.current_index].rsplit(self.reference_delimiter, 1)[0]
             else:
                 reference_name = os.path.splitext(os.path.basename(self.file_list[self.current_index]))[0]
             reference_name = os.path.basename(reference_name)
