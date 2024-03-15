@@ -697,7 +697,7 @@ if __name__ == '__main__':
 
     # Load the last config file used
     settings = QSettings('SpeedyIQA', 'ImageViewer')
-    config_file = settings.value('config_file', os.path.join(default_dir, 'config.yml'))
+    config_file = settings.value('last_config_file', os.path.join(default_dir, 'config.yml'))
 
     # Create the configuration wizard
     wizard = ConfigurationWizard(config_file)
