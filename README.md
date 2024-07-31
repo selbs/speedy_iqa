@@ -99,7 +99,7 @@ Your progress through the folder of images is shown in the progress bar at the b
 | <kbd>←</kbd> / <kbd>B</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> / <kbd>Back</kbd> |   Previous image    |
 |                      <kbd>→</kbd> /<kbd>N</kbd> / <kbd>Space</kbd>                       |     Next image      |
 |       <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>→</kbd>/<kbd>N</kbd>/<kbd>Space</kbd>        | Next unrated image  |
-|                  <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>                  | Select radiobutton  |
+|               <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>, etc                | Select radiobutton  |
 |                               <kbd>+</kbd> / <kbd>=</kbd>                                |       Zoom in       |
 |                               <kbd>-</kbd> / <kbd>_</kbd>                                |      Zoom out       |
 |                                       <kbd>R</kbd>                                       | Rotate images right |
@@ -120,10 +120,6 @@ wizard or the `config.yml` file.
 
 Executable Application
 ----------------------
-
-The executable application may be downloaded from:
-- Mac OS X:  https://github.com/selbs/speedy_iqa/releases/
-- Windows: [TO DO](https://www.example_link.com)
 
 ### Creating an Executable
 

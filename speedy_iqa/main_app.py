@@ -368,16 +368,12 @@ class MainApp(QMainWindow):
             Qt.Key.Key_Right,
             Qt.Key.Key_Space,
             Qt.Key.Key_N,
-            # Qt.Key.Key_Enter,
-            # Qt.Key.Key_Return
         ])
         self.nextUnratedAction = QAction(self.icons['next_unrated'], "Next Unrated Image", self)
         self.nextUnratedAction.setShortcuts([
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Right),
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Space),
             QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N),
-            # QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Enter),
-            # QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_Return),
         ])
 
         action_width = self.labelling_toolbar.sizeHint().width() // 4
