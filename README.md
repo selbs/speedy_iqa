@@ -1,17 +1,15 @@
 Speedy IQA for Desktop <img src="speedy_iqa/assets/logo.png" alt="App Logo" width="200" style="float: right;">
 =====================
 
-Speedy IQA is an image viewer and labeller for image quality assessment (IQA). The program may be
-used to quickly check the quality of the images against a reference image and to label them with the required ground 
-truth for developing an IQA model.
+*An image viewer and labeller for image quality assessment (IQA)*
 
-The program may be run from the command line or as an executable, which can be downloaded or 
-created from the source code.
+---
 
-Primarily developed for use on Mac OS X, but should work on Linux and Windows.
+Speedy IQA may be used to quickly check the quality of the images against a reference image and to label them with the required ground truth for developing an IQA model.
 
-> **Warning:** Please note that this application is still in development and there may be unresolved bugs and issues. 
-> Use at your own risk!
+The program may be run from the command line or as an executable, which created from the source code. We hope to make a downloadable executable available soon.
+
+Primarily developed for use on Mac OS X, but should work on Linux and Windows. Please note that this application is still in development and there may be unresolved bugs and issues.
 
 ![Screenshot](speedy_iqa/assets/screenshot.png)
 
@@ -31,6 +29,11 @@ Primarily developed for use on Mac OS X, but should work on Linux and Windows.
   - [YAML File](#yaml-file)
 - [Backup Files](#backup-files)
 - [Executable Application](#executable-application)
+
+> :warning: **Warning:** 
+> 
+> Please note that this application is still in development and there may be unresolved bugs and issues. 
+> Use at your own risk!
 
 Installation
 ------------
@@ -99,7 +102,7 @@ Your progress through the folder of images is shown in the progress bar at the b
 | <kbd>←</kbd> / <kbd>B</kbd> / <kbd>Delete</kbd> / <kbd>Backspace</kbd> / <kbd>Back</kbd> |   Previous image    |
 |                      <kbd>→</kbd> /<kbd>N</kbd> / <kbd>Space</kbd>                       |     Next image      |
 |       <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>→</kbd>/<kbd>N</kbd>/<kbd>Space</kbd>        | Next unrated image  |
-|               <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>, etc                | Select radiobutton  |
+|                  <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>                  | Select radiobutton  |
 |                               <kbd>+</kbd> / <kbd>=</kbd>                                |       Zoom in       |
 |                               <kbd>-</kbd> / <kbd>_</kbd>                                |      Zoom out       |
 |                                       <kbd>R</kbd>                                       | Rotate images right |

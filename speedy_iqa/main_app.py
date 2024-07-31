@@ -818,11 +818,6 @@ class MainApp(QMainWindow):
         # reference_name = os.path.basename(self.file_list[self.current_index])
 
         reference_path = os.path.join(self.reference_dir_path, reference_name)
-
-        # print(f"Image Path: {img_path}")
-        # print(f"Reference Path: {reference_path}")
-        # print(f"Reference Name: {reference_name}")
-
         try:
             self.image = self.read_file(img_path, img_extension)
             self.reference_image = self.read_file(reference_path, img_extension)
