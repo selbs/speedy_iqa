@@ -49,6 +49,8 @@ def configure_qt_environment():
     os.environ['QT_PLUGIN_PATH'] = qt_plugin_path
 
 
+configure_qt_environment()
+
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
