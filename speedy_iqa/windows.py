@@ -713,7 +713,47 @@ class SetupWindow(QDialog):
         QTimer.singleShot(0, self.on_json_checkbox_changed)
 
     def on_delimiter_changed(self):
+        """
+        Save the delimiter to QSettings.
+        """
         self.settings.setValue("reference_delimiter", self.delimiter_line_edit.text())
+
+    def check_delimiter(self):
+        """
+        Check if the delimiter generates image pairs for review.
+        """
+        ref_dir = os.path.normpath(
+            os.path.abspath(self.reference_folder_label.text())
+        )
+        image_files = sorted(find_relative_image_path(self.folder_label.text()))
+        delimiter = self.delimiter_line_edit.text()
+
+        for i, file in enumerate(image_files):
+            img_extension = os.path.splitext(file)[1]
+            if delimiter:
+                reference_name = file.rsplit(delimiter, 1)[0]
+            else:
+                reference_name = os.path.splitext(os.path.basename(file))[0]
+            reference_name = os.path.basename(reference_name)
+            if not reference_name.endswith(img_extension) and os.path.isfile(
+                    os.path.join(ref_dir, reference_name + img_extension)
+            ):
+                reference_name = reference_name + img_extension
+            if os.path.isfile(os.path.join(ref_dir, reference_name)):
+                return True
+        return False
+
+    def generate_check_delimiter_msg(self):
+        """
+        Generate a message box to inform the user that the delimiter generates no image pairs for review.
+        """
+        QMessageBox.critical(self,
+                             "Error",
+                             f"PLEASE CHECK THE DELIMITER!\n\n"
+                             f"No reference images can be identified for the assessment images "
+                             f"using the delimiter currently entered. Please check it is correct.",
+                             QMessageBox.StandardButton.Ok,
+                             defaultButton=QMessageBox.StandardButton.Ok)
 
     def on_accepted(self):
         """
@@ -721,9 +761,9 @@ class SetupWindow(QDialog):
         """
 
         if not os.path.isdir(self.folder_label.text()) and self.new_json_tickbox.isChecked():
-            print("No image folder selected", self.folder_label.text())
-            print("No image folder selected", self.new_json_tickbox.isChecked())
-            print(not os.path.isdir(self.folder_label.text()) and not self.new_json_tickbox.isChecked())
+            # print("No image folder selected", self.folder_label.text())
+            # print("No image folder selected", self.new_json_tickbox.isChecked())
+            # print(not os.path.isdir(self.folder_label.text()) and not self.new_json_tickbox.isChecked())
             self.generate_no_image_msg()
             self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
@@ -732,7 +772,13 @@ class SetupWindow(QDialog):
             self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
         elif self.new_json_tickbox.isChecked():
-            super().accept()
+            if not self.check_delimiter():
+                # Prevent the dialog from closing
+                self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+                self.generate_check_delimiter_msg()
+                return
+            else:
+                super().accept()
         elif not self.check_json_compatibility(self.json_label.text()):
             # Prevent the dialog from closing
             self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
