@@ -1776,8 +1776,8 @@ class MainApp(QMainWindow):
                 data = json.load(file)
 
             self.file_list = [entry['filename'] for entry in data['files']]
-            self.dir_path = data['image_directory']
-            self.reference_dir_path = data['reference_image_directory']
+            self.dir_path = os.path.normpath(data['image_directory'])
+            self.reference_dir_path = os.path.normpath(data['reference_image_directory'])
             self.reference_delimiter = data['reference_delimiter']
 
             for entry in data['files']:
