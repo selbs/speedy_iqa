@@ -216,11 +216,6 @@ class AdvancedSettingsDialog(QDialog):
             self.config_files_combobox.setStyleSheet(f"QComboBox {{ color: {self.disabled_colour}; }}")
 
     def close(self):
-        # self.settings.setValue("log_dir", self.log_dir_edit.text())
-        # self.settings.setValue("backup_dir", self.backup_dir_edit.text())
-        # self.settings.setValue("max_backups", self.backup_spinbox.value())
-        # self.settings.setValue("backup_interval", self.backup_int_spinbox.value())
-
         if self.filename_edit.text():
             self.wiz.config_filename = self.filename_edit.text()
         else:

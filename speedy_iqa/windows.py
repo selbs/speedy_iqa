@@ -273,12 +273,6 @@ class LoadMessageBox(QDialog):
         self.config_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         config_layout.addLayout(config_box_layout)
         right_layout.addLayout(config_layout)
-        # config_label2 = QLabel("Only change this if you have created or been provided with "
-        #                        "specific config file/s.")
-        # config_label2.setWordWrap(True)
-        # config_label2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        # config_label2.setStyleSheet("font-size: 12px; font-style: italic;")
-        # config_layout.addWidget(config_label2)
 
         config_label2_text = ("<p style='white-space: pre-wrap; width: 100px;'>"
                               "Only change this if you have created or been provided with "
@@ -287,7 +281,6 @@ class LoadMessageBox(QDialog):
         self.config_help_btn.setFixedSize(25, 25)
         self.config_help_btn.setToolTip(config_label2_text)
         self.config_help_btn.setToolTipDuration(0)
-        # self.config_help_btn.setDisabled(True)
         self.connection_manager.connect(self.config_help_btn.clicked,
                                         lambda: self.show_help_box(config_label2_text))
         self.config_help_btn.setStyleSheet(f"color: {combo_text_colour}; border: 1px solid {combo_text_colour};")
@@ -319,10 +312,6 @@ class LoadMessageBox(QDialog):
         config_wizard_button = QPushButton("Set Up")
         self.connection_manager.connect(config_wizard_button.clicked, self.on_wizard_button_clicked)
         hbox.addWidget(config_wizard_button)
-
-        # Add a spacer to create some space between the buttons and the Configuration Wizard button
-        # spacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        # hbox.addItem(spacer)
 
         # Add a QPushButton for "OK"
         ok_button = QPushButton("Annotate")
@@ -480,6 +469,14 @@ class SetupWindow(QDialog):
         self.new_json_tickbox.setObjectName("new_json")
         layout.addWidget(self.new_json_tickbox)
 
+        self.normalise_toggle = QCheckBox("Normalise Images (i.e. truncate pixel range to max and min values)")
+        self.normalise_toggle.setStyleSheet("font-weight: bold;")
+        self.normalise_images = self.settings.value("normalise_images", False)
+        self.normalise_toggle.setChecked(self.normalise_images)
+
+        layout.addWidget(self.normalise_toggle)
+        layout.addItem(spacer)
+
         layout.addSpacerItem(expanding_spacer)
 
         json_frame = QFrame()
@@ -540,10 +537,6 @@ class SetupWindow(QDialog):
 
         dcm_layout = QVBoxLayout()
 
-        # dcm_info_label = QLabel("Please select the folders/directories containing the images:")
-        # # dcm_info_label.setStyleSheet("font-weight: bold;")
-        # dcm_layout.addWidget(dcm_info_label)
-
         dcm_layout.addSpacerItem(fixed_spacer)
 
         im_selection_frame = QFrame()
@@ -570,7 +563,6 @@ class SetupWindow(QDialog):
         self.im_folder_explanation_btn.setFixedSize(25, 25)
         self.im_folder_explanation_btn.setToolTip(im_folder_explanation_text)
         self.im_folder_explanation_btn.setToolTipDuration(0)
-        # self.im_folder_explanation_btn.setDisabled(True)
         self.connection_manager.connect(self.im_folder_explanation_btn.clicked,
                                         lambda: self.show_help_box(im_folder_explanation_text))
         self.im_folder_explanation_btn.setStyleSheet(f"color: {help_colour}; border: 1px solid {help_colour};")
@@ -578,16 +570,11 @@ class SetupWindow(QDialog):
         dcm_selection_layout.addWidget(self.im_folder_explanation_btn)
 
         im_selection_layout.addLayout(dcm_selection_layout)
-        # im_folder_explanation = QLabel()
-        # im_folder_explanation.setAlignment(Qt.AlignmentFlag.AlignRight)
-        # im_folder_explanation.setStyleSheet("font-size: 12px; font-style: italic;")
-        # im_selection_layout.addWidget(im_folder_explanation)
 
         delimiter_layout = QHBoxLayout()
         delimiter_label = QLabel("Image Filename Delimiter:")
         delimiter_label.setStyleSheet("font-weight: bold;")
         delimiter_layout.addWidget(delimiter_label)
-        # reference_selection_layout.addSpacerItem(expanding_spacer)
         fixed_15_spacer = QSpacerItem(15, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         delimiter_layout.addSpacerItem(fixed_15_spacer)
         self.delimiter_line_edit = QLineEdit()
@@ -609,13 +596,11 @@ class SetupWindow(QDialog):
         self.delimiter_explanation_btn.setFixedSize(25, 25)
         self.delimiter_explanation_btn.setToolTip(delimiter_explanation_text)
         self.delimiter_explanation_btn.setToolTipDuration(0)
-        # self.delimiter_explanation_btn.setDisabled(True)
         self.connection_manager.connect(self.delimiter_explanation_btn.clicked,
                                         lambda: self.show_help_box(delimiter_explanation_text))
         self.delimiter_explanation_btn.setStyleSheet(f"color: {help_colour}; border: 1px solid {help_colour};")
         self.delimiter_line_edit.setWhatsThis(delimiter_explanation_text)
         delimiter_layout.addWidget(self.delimiter_explanation_btn)
-        # delimiter_layout.addSpacerItem(expanding_spacer)
 
         im_selection_layout.addLayout(delimiter_layout)
         im_selection_frame.setLayout(im_selection_layout)
@@ -642,7 +627,6 @@ class SetupWindow(QDialog):
         self.ref_folder_explanation_btn.setFixedSize(25, 25)
         self.ref_folder_explanation_btn.setToolTip(ref_folder_explanation_text)
         self.ref_folder_explanation_btn.setToolTipDuration(0)
-        # self.ref_folder_explanation_btn.setDisabled(True)
         self.connection_manager.connect(self.ref_folder_explanation_btn.clicked,
                                         lambda: self.show_help_box(ref_folder_explanation_text))
         self.ref_folder_explanation_btn.setStyleSheet(f"color: {help_colour}; border: 1px solid {help_colour};")
@@ -651,16 +635,13 @@ class SetupWindow(QDialog):
         reference_selection_layout.addWidget(self.ref_folder_explanation_btn)
 
         ref_selection_layout.addLayout(reference_selection_layout)
-        # ref_folder_explanation = QLabel("This folder contains the reference images for comparison.")
-        # ref_folder_explanation.setAlignment(Qt.AlignmentFlag.AlignRight)
-        # ref_folder_explanation.setStyleSheet("font-size: 12px; font-style: italic;")
-        # ref_selection_layout.addWidget(ref_folder_explanation)
         ref_selection_frame.setLayout(ref_selection_layout)
         dcm_layout.addWidget(ref_selection_frame)
 
         dcm_layout.addSpacerItem(fixed_spacer)
 
         new_json_layout.addLayout(dcm_layout)
+
         new_json_frame.setLayout(new_json_layout)
         layout.addWidget(new_json_frame)
 
@@ -682,23 +663,9 @@ class SetupWindow(QDialog):
         if settings.value('json_path', "") == "":
             # Set tickbox to ticked and inactivate load json button
             self.new_json_tickbox.setChecked(True)
-            # self.json_button.setEnabled(False)
-            # self.folder_button.setEnabled(True)
-            # self.reference_folder_button.setEnabled(True)
-            # self.settings.setValue("new_json", True)
-            # self.json_label.setText(self.settings.value("json_path", ""))
-            # self.folder_label.setText("")
-            # self.reference_folder_label.setText("")
         else:
             # Set tickbox to unticked and activate load json button
             self.new_json_tickbox.setChecked(False)
-            # self.json_button.setEnabled(True)
-            # self.folder_button.setEnabled(False)
-            # self.reference_folder_button.setEnabled(False)
-            # self.settings.setValue("new_json", False)
-            # self.json_label.setText("")
-            # self.folder_label.setText(self.settings.value("image_path", ""))
-            # self.reference_folder_label.setText(self.settings.value("reference_path", ""))
 
         # Connect buttons to functions
         self.connection_manager.connect(self.json_button.clicked, self.select_json)
@@ -706,6 +673,7 @@ class SetupWindow(QDialog):
         self.connection_manager.connect(self.reference_folder_button.clicked, self.select_reference_folder)
         self.connection_manager.connect(self.new_json_tickbox.stateChanged, self.on_json_checkbox_changed)
         self.connection_manager.connect(self.delimiter_line_edit.textChanged, self.on_delimiter_changed)
+        self.connection_manager.connect(self.normalise_toggle.clicked, self.on_normalise_toggled)
 
         # Load previously selected files
         self.load_saved_files(settings)
@@ -717,6 +685,13 @@ class SetupWindow(QDialog):
         Save the delimiter to QSettings.
         """
         self.settings.setValue("reference_delimiter", self.delimiter_line_edit.text())
+
+    def on_normalise_toggled(self):
+        """
+        Save the normalise toggle to QSettings.
+        """
+        self.settings.setValue("normalise_images", self.normalise_toggle.isChecked())
+        self.normalise_images = self.normalise_toggle.isChecked()
 
     def check_delimiter(self):
         """
@@ -761,9 +736,6 @@ class SetupWindow(QDialog):
         """
 
         if not os.path.isdir(self.folder_label.text()) and self.new_json_tickbox.isChecked():
-            # print("No image folder selected", self.folder_label.text())
-            # print("No image folder selected", self.new_json_tickbox.isChecked())
-            # print(not os.path.isdir(self.folder_label.text()) and not self.new_json_tickbox.isChecked())
             self.generate_no_image_msg()
             self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
@@ -807,10 +779,6 @@ class SetupWindow(QDialog):
             self.reference_folder_button.setEnabled(True)
             self.delimiter_line_edit.setEnabled(True)
             self.delimiter_line_edit.setText(self.settings.value("reference_delimiter", "__"))
-            # self.delimiter_explanation_btn.setEnabled(True)
-            # self.im_folder_explanation_btn.setEnabled(True)
-            # self.ref_folder_explanation_btn.setEnabled(True)
-            # self.json_explanation_btn.setEnabled(False)
 
             if not self.check_json_compatibility(self.json_label.text()):
                 self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
@@ -826,10 +794,6 @@ class SetupWindow(QDialog):
             self.folder_button.setEnabled(False)
             self.reference_folder_button.setEnabled(False)
             self.delimiter_line_edit.setEnabled(False)
-            # self.delimiter_explanation_btn.setEnabled(False)
-            # self.im_folder_explanation_btn.setEnabled(False)
-            # self.ref_folder_explanation_btn.setEnabled(False)
-            # self.json_explanation_btn.setEnabled(True)
 
 
     def load_saved_files(self, settings: QSettings):

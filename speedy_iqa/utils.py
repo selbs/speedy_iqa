@@ -27,7 +27,6 @@ import yaml
 import os
 from typing import Dict, Union, Any, Optional, Tuple, List, Collection
 from PyQt6.QtCore import *
-import sys
 import numpy as np
 from PIL import Image
 import glob
@@ -217,47 +216,6 @@ def setup_logging(log_out_path: str) -> Tuple[logging.Logger, logging.Logger]:
 #     logger = logging.getLogger(__name__)
 #     console_msg = logging.getLogger(__name__)
 #     return logger, console_msg
-
-
-def bytescale(
-        arr: np.ndarray,
-        low: Optional[float] = None,
-        high: Optional[float] = None,
-        a: float = 0,
-        b: float = 255
-) -> np.ndarray:
-    """
-    Linearly rescale values in an array. By default, it scales the values to the byte range (0-255).
-
-    :param arr: The array to rescale.
-    :type arr: np.ndarray
-    :param low: Lower boundary of the output interval. All values smaller than low are clipped to low.
-    :type low: float
-    :param high: Upper boundary of the output interval. All values larger than high are clipped to high.
-    :type high: float
-    :param a: Lower boundary of the input interval.
-    :type a: float
-    :param b: Upper boundary of the input interval.
-    :type b: float
-    :return: The rescaled array.
-    :rtype: np.ndarray
-    """
-
-    arr = arr.astype(float)  # to ensure floating point division
-
-    # Clip to specified high/low values, if any
-    if low is not None:
-        arr = np.maximum(arr, low)
-    if high is not None:
-        arr = np.minimum(arr, high)
-
-    min_val, max_val = np.min(arr), np.max(arr)
-
-    if np.isclose(min_val, max_val):  # avoid division by zero
-        return np.full_like(arr, a, dtype=np.uint8)
-
-    # Normalize between a and b
-    return (((b - a) * (arr - min_val) / (max_val - min_val)) + a).astype(np.uint8)
 
 
 def convert_to_checkstate(value: int) -> Qt.CheckState:

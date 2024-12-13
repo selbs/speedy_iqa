@@ -30,7 +30,7 @@ from functools import partial
 from random import Random
 
 from speedy_iqa.windows import AboutMessageBox, FileSelectionDialog
-from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging, bytescale
+from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging
 from speedy_iqa.utils import convert_to_checkstate, find_relative_image_path, invert_grayscale
 from speedy_iqa.utils import make_column_categorical, expand_dict_column
 from speedy_iqa.graphics import CustomGraphicsView
@@ -115,7 +115,6 @@ class MainApp(QMainWindow):
         self.findings = config.get('checkboxes', [])
         self.radiobutton_groups1 = config.get('radiobuttons_page1', {})
         self.radiobutton_groups2 = config.get('radiobuttons_page2', {})
-        # self.task = "medical diagnosis"
         self.tristate_checkboxes = config.get('tristate_checkboxes', False)
         self.max_backups = config.get('max_backups', 10)
         self.backup_dir = os.path.normpath(os.path.expanduser(config.get('backup_dir', '~/speedy_iqa/backups')))
@@ -141,6 +140,8 @@ class MainApp(QMainWindow):
                 os.path.abspath(self.settings.value("reference_path", "."))
             )
             self.reference_delimiter = self.settings.value("reference_delimiter", "__")
+
+            self.normalise_images = self.settings.value("normalise_images", False)
 
             imgs_wout_ref = self.check_no_of_images_wout_ref()
 
@@ -190,9 +191,6 @@ class MainApp(QMainWindow):
         # Set the central widget to the image viewer
         self.image_view = CustomGraphicsView(self, main_window=True, label="Assessment")
         self.reference_view = CustomGraphicsView(self, main_window=True, label="Reference")
-
-        # Assign colors to findings
-        self.assign_colors_to_findings()
 
         # Load the checkbox values from json file
         if self.loaded:
@@ -287,8 +285,6 @@ class MainApp(QMainWindow):
 
         # Create the image toolbar for image manipulation
         self.image_toolbar = QToolBar(self)
-        # self.invert_action = QAction(self.icons['inv'], "Invert", self)
-        # self.image_toolbar.addAction(self.invert_action)
         self.rotate_left_action = QAction(self.icons['rot_left'], "Rotate 90° Left", self)
         self.rotate_left_action.setShortcut(Qt.Key.Key_L)
         self.image_toolbar.addAction(self.rotate_left_action)
@@ -307,19 +303,6 @@ class MainApp(QMainWindow):
         # Set scrollbar style (too dark with qt material dark theme...)
         self.set_scroll_bar_colors()
 
-        # Create sliders for windowing
-        self.window_center_label = QAction(self.icons['wc'], "Brightness", self)
-        self.window_width_label = QAction(self.icons['ww'], "Contrast", self)
-        self.window_center_slider = QSlider(Qt.Orientation.Horizontal)
-        self.window_width_slider = QSlider(Qt.Orientation.Horizontal)
-
-        self.window_center_slider.setRange(1, 255)
-        self.window_center_slider.setValue(127)
-        self.window_width_slider.setRange(1, 450)
-        self.window_width_slider.setValue(255)
-        self.window_center_slider.setInvertedAppearance(True)
-        self.window_width_slider.setInvertedAppearance(True)
-
         # Create a space between the windowing sliders and the next button
         spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         spacer_layout = QHBoxLayout()
@@ -330,16 +313,6 @@ class MainApp(QMainWindow):
 
         # Create a reset window button and label the window sliders
         self.image_toolbar.addSeparator()
-        # self.reset_window_action = QAction(self.icons['reset_win'], "Reset Brightness and Contrast", self)
-        # self.auto_window_action = QAction(self.icons['auto_win'], "Auto-adjust", self)
-        # self.image_toolbar.addAction(self.reset_window_action)
-        # self.image_toolbar.addAction(self.auto_window_action)
-        # self.image_toolbar.addAction(self.window_center_label)
-        # self.image_toolbar.addWidget(self.window_center_slider)
-        # self.image_toolbar.addAction(self.window_width_label)
-        # self.image_toolbar.addWidget(self.window_width_slider)
-        # self.image_toolbar.addWidget(spacer_widget)
-        # self.image_toolbar.addSeparator()
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.image_toolbar)
 
         self.nav_toolbar = QToolBar(self)
@@ -390,7 +363,6 @@ class MainApp(QMainWindow):
         self.prevButton = QToolButton()
         self.prevButton.setDefaultAction(self.prevAction)
         self.prevButton.setFixedWidth(action_width)
-        # self.prevButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.prevButton.setStyleSheet(f"""
                     QToolButton {{background-color: {nav_bg_color1}; border: none; border-radius: 5px;}}
                     QToolButton:hover {{border: none; border-radius: 5px; background-color: {nav_bg_color2};}}
@@ -409,11 +381,6 @@ class MainApp(QMainWindow):
         self.nextUnratedButton = QToolButton()
         self.nextUnratedButton.setDefaultAction(self.nextUnratedAction)
         self.nextUnratedButton.setFixedWidth(action_width)
-        # self.nextButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        # self.nextUnratedButton.setStyleSheet(f"""
-        #     QToolButton {{background-color: {nav_bg_color1}; border: none; border-radius: 5px;}}
-        #     QToolButton:hover {{border: none; border-radius: 5px; background-color: {nav_bg_color2};}}
-        # """)
         self.nextUnratedButton.setStyleSheet(f"""
                             QToolButton {{border: none; border-radius: 5px;}}
                             QToolButton:hover {{border: none; border-radius: 5px;}}
@@ -423,7 +390,6 @@ class MainApp(QMainWindow):
         self.nextButton = QToolButton()
         self.nextButton.setDefaultAction(self.nextAction)
         self.nextButton.setFixedWidth(action_width)
-        # self.nextButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.nextButton.setStyleSheet(f"""
             QToolButton {{background-color: {nav_bg_color1}; border: none; border-radius: 5px;}}
             QToolButton:hover {{border: none; border-radius: 5px; background-color: {nav_bg_color2};}}
@@ -544,18 +510,10 @@ class MainApp(QMainWindow):
         Initiate connections between buttons / sliders and their functions
         """
         self.connection_manager.connect(self.textbox.textChanged, self.on_text_changed)
-        # self.connection_manager.connect(self.invert_action.triggered, self.invert_colours)
         self.connection_manager.connect(self.rotate_left_action.triggered, self.rotate_image_left)
         self.connection_manager.connect(self.rotate_right_action.triggered, self.rotate_image_right)
         self.connection_manager.connect(self.zoom_in_action.triggered, self.zoom_in)
         self.connection_manager.connect(self.zoom_out_action.triggered, self.zoom_out)
-        # self.connection_manager.connect(self.reset_window_action.triggered, self.reset_window_sliders)
-        # self.connection_manager.connect(self.auto_window_action.triggered, self.auto_window_sliders)
-        # self.connection_manager.connect(self.window_center_slider.valueChanged, self.update_image)
-        # self.connection_manager.connect(self.window_width_slider.valueChanged, self.update_image)
-        self.connection_manager.connect(self.nextAction.triggered, self.reset_window_sliders)
-        self.connection_manager.connect(self.nextUnratedAction.triggered, self.reset_window_sliders)
-        self.connection_manager.connect(self.prevAction.triggered, self.reset_window_sliders)
         self.connection_manager.connect(self.prevAction.triggered, self.previous_image)
         self.connection_manager.connect(self.goToAction.triggered, self.go_to_image)
         self.connection_manager.connect(self.nextAction.triggered, self.next_image)
@@ -583,7 +541,6 @@ class MainApp(QMainWindow):
         dialog = FileSelectionDialog(self.file_list, self)
         result = dialog.exec()
         if result == QDialog.DialogCode.Accepted:
-            self.reset_window_sliders()
             index = self.file_list.index(dialog.selected_file)
             self.change_image("go_to", index)
 
@@ -659,34 +616,6 @@ class MainApp(QMainWindow):
 
         return backup_files
 
-    # def wheelEvent(self, event: QWheelEvent):
-    #     """
-    #     Override the wheelEvent function to allow for scrolling with the mouse wheel to change the windowing parameters.
-    #     - Ctrl/Cmd + Scroll: Change window width
-    #     - Shift + Scroll: Change window center
-    #
-    #     :param event: The wheelEvent function to override
-    #     :type event: QWheelEvent
-    #     """
-    #     if event.modifiers() == Qt.KeyboardModifier.ControlModifier:  # check if Ctrl key is pressed
-    #         delta = event.angleDelta().y()  # get the scroll direction
-    #         if delta > 0:
-    #             # increase window width
-    #             self.window_width_slider.setValue(self.window_width_slider.value() + 10)
-    #         elif delta < 0:
-    #             # decrease window width
-    #             self.window_width_slider.setValue(self.window_width_slider.value() - 10)
-    #     elif event.modifiers() == Qt.KeyboardModifier.ShiftModifier:  # check if Shft key is pressed
-    #         delta = event.angleDelta().y()  # get the scroll direction
-    #         if delta > 0:
-    #             # increase window width
-    #             self.window_center_slider.setValue(self.window_center_slider.value() + 5)
-    #         elif delta < 0:
-    #             # decrease window width
-    #             self.window_center_slider.setValue(self.window_center_slider.value() - 5)
-    #     else:
-    #         super().wheelEvent(event)
-
     def open_config_yml(self) -> Dict:
         """
         Opens the config .yml file and returns the data, including the list of findings/checkboxes,
@@ -743,7 +672,6 @@ class MainApp(QMainWindow):
         self.image = rotated_image
         self.reference_image = rotated_reference_image
         self.load_image()
-        self.update_image()
         self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
         self.image_view.scale(self.image_view.zoom, self.image_view.zoom)
         self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(),
@@ -761,7 +689,6 @@ class MainApp(QMainWindow):
         self.image = rotated_image
         self.reference_image = rotated_reference_image
         self.load_image()
-        self.update_image()
         self.image_view.fitInView(self.image_scene.items()[-1].boundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
         self.image_view.scale(self.image_view.zoom, self.image_view.zoom)
         self.reference_view.fitInView(self.reference_scene.items()[-1].boundingRect(),
@@ -928,18 +855,9 @@ class MainApp(QMainWindow):
             image = apply_voi_lut(image.astype(int), ds, 0)
             if ds.PhotometricInterpretation == "MONOCHROME1":
                 image = invert_grayscale(image)
-            # Convert the pixel array to an 8-bit integer array
-            #############################
-            # TODO: Check if we want this
-            image = bytescale(image)
-            #############################
         else:
             # Read the image file
-            image = iio.imread(file_path)
-            #############################
-            # TODO: Check if we want this
-            image = bytescale(image)
-            #############################
+            image = iio.v3.imread(file_path)
         return image
 
     def load_image(self):
@@ -947,36 +865,15 @@ class MainApp(QMainWindow):
         Loads the image into the image view.
         """
         # Load the main image
-        qimage = array2qimage(self.image)
+        qimage = array2qimage(self.image, normalize=self.normalise_images)
         self.pixmap = QPixmap.fromImage(qimage)
         self.pixmap_item.setPixmap(self.pixmap)
 
         # Load the reference image
-        reference_qimage = array2qimage(self.reference_image)
+        reference_qimage = array2qimage(self.reference_image, normalize=self.normalise_images)
         self.reference_pixmap = QPixmap.fromImage(reference_qimage)
         self.reference_pixmap_item.setPixmap(self.reference_pixmap)
 
-    def update_image(self):
-        """
-        Updates the image in the image view with new windowing settings.
-        """
-        window_center = self.window_center_slider.value()
-        window_width = self.window_width_slider.value()
-
-        for i, image in enumerate([self.image, self.reference_image]):
-            img = np.copy(image)
-            img = img.astype(np.float16)
-            img = (img - window_center + 0.5 * window_width) / window_width
-            img[img < 0] = 0
-            img[img > 1] = 1
-            img = (img * 255).astype(np.uint8)
-            qimage = array2qimage(img)
-            if i == 0:
-                self.pixmap = QPixmap.fromImage(qimage)
-                self.pixmap_item.setPixmap(self.pixmap)
-            else:
-                self.reference_pixmap = QPixmap.fromImage(qimage)
-                self.reference_pixmap_item.setPixmap(self.reference_pixmap)
 
     def create_checkboxes(self):
         """
@@ -1220,7 +1117,6 @@ class MainApp(QMainWindow):
         instructions1.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         instructions1.setText("1 = VERY POOR  /  4 = VERY GOOD")
         instructions1.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-        # self.page1_layout.addWidget(instructions1)
         h_text_layout1.addWidget(instructions1)
         page_label1 = QLabel(self)
         page_label1.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -1248,12 +1144,6 @@ class MainApp(QMainWindow):
             # Add the scroll area to the page layout
             self.page1_layout.addWidget(scroll1)
 
-        # spacer4 = QWidget()
-        # spacer4.setMinimumHeight(0)
-        # spacer4.setMaximumHeight(10)
-        # spacer4.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        # layout.addWidget(spacer4)
-
         if bool(self.radiobutton_groups2):
             button = QPushButton('Continue to 2/2', clicked=self.show_page2)
             button.setStyleSheet("font-size: 14px;")
@@ -1278,7 +1168,6 @@ class MainApp(QMainWindow):
             instructions2.setAlignment(Qt.AlignmentFlag.AlignLeft)
             instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
             instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-            # self.page2_layout.addWidget(instructions2)
             h_text_layout2.addWidget(instructions2)
             page_label2 = QLabel(self)
             page_label2.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -1305,12 +1194,6 @@ class MainApp(QMainWindow):
             # # Add the scroll area to the page layout
             self.page2_layout.addWidget(scroll2)
 
-            # instructions2 = QLabel(self)
-            # instructions2.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-            # instructions2.setText("1 = VERY POOR  /  4 = VERY GOOD")
-            # instructions2.setStyleSheet("QLabel { font-size: 12px; font-weight: normal }")
-            # self.page2_layout.addWidget(instructions2)
-
             page2_button_layout = QHBoxLayout()
 
             # button = QPushButton('Back to 1/2', clicked=self.show_page1)
@@ -1318,16 +1201,9 @@ class MainApp(QMainWindow):
             button.setStyleSheet("font-size: 14px;")
             page2_button_layout.addWidget(button)
 
-            # self.nextUnratedButton = QToolButton()
-            # self.nextUnratedButton.setDefaultAction(self.nextUnratedAction)
-            # self.nextUnratedButton.setFixedWidth(action_width)
-
-            # self.next_unviewed_button = QToolButton()
             self.next_unviewed_button = QPushButton('Next Unrated')
-            # self.next_unviewed_button.setStyleSheet("font-size: 14px;")
             page2_button_layout.addWidget(self.next_unviewed_button)
 
-            # self.page2_layout.addWidget(button)
             self.page2_layout.addLayout(page2_button_layout)
 
             self.page2.setLayout(self.page2_layout)
@@ -1341,12 +1217,6 @@ class MainApp(QMainWindow):
 
         main_content_layout.addWidget(self.stack)
 
-        # spacer3 = QWidget()
-        # spacer3.setMinimumHeight(0)
-        # spacer3.setMaximumHeight(10)
-        # spacer3.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        # layout.addWidget(spacer3)
-
         # Add the Notes textbox
         self.textbox_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.textbox_label.setObjectName("Notes")
@@ -1355,7 +1225,6 @@ class MainApp(QMainWindow):
 
         self.textbox.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         self.textbox.setMinimumHeight(50)
-        # self.textbox.setMaximumHeight(150)
         self.textbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding)
 
         textbox_widget = QWidget()
@@ -1369,9 +1238,6 @@ class MainApp(QMainWindow):
 
         # self.labelling_toolbar.addWidget(layout_widget)
         self.labelling_toolbar.setStyleSheet("QToolBar QLabel { font-weight: bold; font-size: 14px; }")
-        # scroll_action = QWidgetAction(self)
-        # scroll_action.setDefaultWidget(scroll)
-        # self.labelling_toolbar.addAction(scroll_action)
         self.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.labelling_toolbar)
 
         self.connection_manager.connect(self.resized, self.sort_toolbar_on_resized)
@@ -1438,41 +1304,8 @@ class MainApp(QMainWindow):
 
         # Create a new file list that puts unviewed files after the current file.
         unviewed_files = [f for f in self.file_list if not self.viewed_values[f]]
-        # viewed_files = [f for f in self.file_list if self.viewed_values[f]]
         if len(unviewed_files) == 0:
             QMessageBox.information(self, "All Images Rated", "You have rated all the images.")
-        # else:
-        #     self.file_list = unviewed_files + viewed_files
-
-    def reset_window_sliders(self):
-        """
-        Resets the window sliders to the default values.
-        """
-        self.window_center_slider.setValue(127)
-        self.window_width_slider.setValue(255)
-
-    def auto_window_sliders(self):
-        """
-        Resets the window sliders to the default values.
-        """
-        # Calculate the bounds for the central 90% of the intensities
-        lower_bound = np.percentile(self.image, 5)
-        upper_bound = np.percentile(self.image, 95)
-
-        # Filter out the intensities outside of these bounds
-        central_image = self.image[(self.image >= lower_bound) & (self.image <= upper_bound)]
-
-        # Calculate median of the filtered image, which will be our window level
-        window_level = np.median(central_image)
-
-        # Calculate window width to cover a certain percentile of the pixel intensities
-        percentile = 99
-        lower = np.percentile(central_image, (100 - percentile) / 2)
-        upper = np.percentile(central_image, 100 - ((100 - percentile) / 2))
-        window_width = upper - lower
-
-        self.window_center_slider.setValue(int(window_level))
-        self.window_width_slider.setValue(int(window_width))
 
     def change_image(self, direction: str, go_to_index: Optional[int] = None,
                      # prev_failed: bool = False
@@ -1488,13 +1321,6 @@ class MainApp(QMainWindow):
         if direction not in ("previous", "next", "go_to", "next_unrated"):
             raise ValueError("Invalid direction value. Expected 'previous' or 'next'.")
 
-        # for cbox in self.findings:
-        #     # Set the checkbox value based on the stored value
-        #     checkbox_value = self.checkbox_values.get(self.file_list[self.current_index], False)[cbox]
-        #     # print(cbox, checkbox_value)
-
-        # if direction == "previous":
-        #     self.viewed_values[self.file_list[self.current_index]] = True
         if self.viewed_values[self.file_list[self.current_index]] != "FAILED":
             if all(v is not None for v in self.radiobutton_values[self.file_list[self.current_index]].values()):
                 self.viewed_values[self.file_list[self.current_index]] = True
@@ -1530,26 +1356,9 @@ class MainApp(QMainWindow):
             else:
                 self.current_index = self.file_list.index(next_unrated)
 
-            # next_unviewed_index = (self.current_index + 1) % len(self.file_list)
-            # while next_unviewed_index != self.current_index and self.viewed_values[self.file_list[next_unviewed_index]]:
-            #     next_unviewed_index = (next_unviewed_index + 1) % len(self.file_list)
-            #
-            # if next_unviewed_index == self.current_index:
-            #     # All images have been viewed
-            #     QMessageBox.information(self, "All Images Rated", "You have rated all the images.")
-            #     self.current_index += 1
-            #     if self.current_index >= len(self.file_list):
-            #         self.current_index = 0
-            # else:
-            #     self.current_index = next_unviewed_index
-
         self.load_file()
         self.apply_stored_rotation()
         self.load_image()
-        self.update_image()
-
-        self.window_center_slider.setValue(127)
-        self.window_width_slider.setValue(255)
 
         self.setWindowTitle(f"Speedy IQA - File: {self.file_list[self.current_index]}")
         self.image_view.zoom = 1
@@ -1616,38 +1425,6 @@ class MainApp(QMainWindow):
             # print(cbox, checkbox_value)
             self.checkboxes[cbox].setCheckState(convert_to_checkstate(checkbox_value))
 
-    # def keyPressEvent(self, event: QKeyEvent):
-    #     """
-    #     Handles key presses as shortcuts.
-    #
-    #     :param event: The key press event
-    #     :type event: QKeyEvent
-    #     """
-    #     # Set up shortcuts
-    #     # if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
-    #     if event.key() == Qt.Key.Key_B:
-    #         self.previous_image()
-    #     elif event.key() == Qt.Key.Key_N:
-    #         self.next_image()
-    #     elif event.key() == Qt.Key.Key_Space:
-    #         self.next_image()
-    #     elif event.key() == Qt.Key.Key_Minus or event.key() == Qt.Key.Key_Underscore:
-    #         self.zoom_out()
-    #     elif event.key() == Qt.Key.Key_Plus or event.key() == Qt.Key.Key_Equal:
-    #         self.zoom_in()
-    #     elif event.key() == Qt.Key.Key_I:
-    #         self.invert_colours()
-    #     elif event.key() == Qt.Key.Key_R:
-    #         self.rotate_image_right()
-    #     elif event.key() == Qt.Key.Key_L:
-    #         self.rotate_image_left()
-    #     elif event.key() == Qt.Key.Key_S:
-    #         self.save_to_json()
-    #     elif event.modifiers() == Qt.KeyboardModifier.ControlModifier:
-    #         if event.key() == Qt.Key.Key_Q:
-    #             self.quit_app()
-    #     else:
-    #         super().keyPressEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent):
         key = event.key()
@@ -1779,6 +1556,7 @@ class MainApp(QMainWindow):
             self.dir_path = os.path.normpath(data['image_directory'])
             self.reference_dir_path = os.path.normpath(data['reference_image_directory'])
             self.reference_delimiter = data['reference_delimiter']
+            self.normalise_images = data['normalise_images']
 
             for entry in data['files']:
                 filename = entry['filename']
@@ -1841,31 +1619,6 @@ class MainApp(QMainWindow):
 
         df.to_csv(selected_file, index=False)
 
-    def on_checkbox_changed(self, state: int):
-        """
-        Updates the checkbox values when a checkbox is changed, updates the cursor mode, and sets the current finding
-        in the image view based on the checkbox state.
-
-        :param state: The state of the checkbox (Qt.CheckState.Unchecked or Qt.CheckState.Checked)
-        :type state: int
-        """
-        filename = self.file_list[self.current_index]
-        cbox = self.sender().text()
-        self.checkbox_values[filename][cbox] = state
-        # self.settings.setValue(filename, state)
-
-    def assign_colors_to_findings(self):
-        """
-        Assigns a color to each finding/checkbox using the matplotlib rainbow color map.
-        """
-        num_colors = len(self.findings)
-        cmap = plt.get_cmap("gist_rainbow")
-        colors = [QColor(*(255 * np.array(cmap(i)[:3])).astype(int)) for i in np.linspace(0, 1, num_colors)]
-
-        for idx, finding in enumerate(self.findings):
-            color = colors[idx % len(colors)]
-            self.colors[finding] = color
-
     def closeEvent(self, event: QCloseEvent):
         """
         Handles the close event.
@@ -1911,9 +1664,7 @@ class MainApp(QMainWindow):
         Initializes the menus.
         """
         image_actions = [
-            # self.invert_action,
             self.rotate_left_action, self.rotate_right_action, self.zoom_in_action, self.zoom_out_action,
-            # self.reset_window_action, self.auto_window_action
         ]
 
         nav_actions = [self.prevAction, self.nextAction, self.nextUnratedAction, self.goToAction]
@@ -2084,16 +1835,11 @@ class MainApp(QMainWindow):
         self.nextAction.setIcon(self.icons['next'])
         self.nextUnratedAction.setIcon(self.icons['next_unrated'])
         self.prevAction.setIcon(self.icons['prev'])
-        # self.reset_window_action.setIcon(self.icons['reset_win'])
-        # self.auto_window_action.setIcon(self.icons['auto_win'])
         self.rotate_left_action.setIcon(self.icons['rot_left'])
         self.rotate_right_action.setIcon(self.icons['rot_right'])
         self.zoom_in_action.setIcon(self.icons['zoom_in'])
         self.zoom_out_action.setIcon(self.icons['zoom_out'])
         self.exportAction.setIcon(self.icons['export'])
-        # self.invert_action.setIcon(self.icons['inv'])
-        # self.window_width_action.setIcon(self.icons['ww'])
-        # self.window_center_action.setIcon(self.icons['wc'])
 
     def set_scroll_bar_colors(self):
         """
