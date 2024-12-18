@@ -31,7 +31,7 @@ from random import Random
 
 from speedy_iqa.windows import AboutMessageBox, FileSelectionDialog
 from speedy_iqa.utils import ConnectionManager, open_yml_file, setup_logging
-from speedy_iqa.utils import convert_to_checkstate, find_relative_image_path, invert_grayscale
+from speedy_iqa.utils import convert_to_checkstate, find_relative_image_path, invert_grayscale, remap_to_8bit
 from speedy_iqa.utils import make_column_categorical, expand_dict_column
 from speedy_iqa.graphics import CustomGraphicsView
 
@@ -858,6 +858,7 @@ class MainApp(QMainWindow):
         else:
             # Read the image file
             image = iio.v3.imread(file_path)
+        image = remap_to_8bit(image)
         return image
 
     def load_image(self):

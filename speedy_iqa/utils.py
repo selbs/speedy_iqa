@@ -289,6 +289,34 @@ def invert_grayscale(image):
     return np.max(image) + np.min(image) - image
 
 
+def remap_to_8bit(array: np.ndarray) -> np.ndarray:
+    """
+    Remaps an image array to 8-bit (0-255), handling integers (signed/unsigned) and floats.
+
+    :param array: Input image as a NumPy array.
+    :return: 8-bit remapped image as a NumPy array.
+    """
+    if np.issubdtype(array.dtype, np.integer):
+        # integer arrays
+        info = np.iinfo(array.dtype)
+        max_value = (1 << (info.bits - 1)) - 1 if np.issubdtype(array.dtype, np.signedinteger) else (1 << info.bits) - 1
+        scale_factor = 255 / max_value
+        remapped_image = (array * scale_factor).clip(0, 255).astype(np.uint8)
+    elif np.issubdtype(array.dtype, np.floating):
+        # float arrays
+        min_value, max_value = array.min(), array.max()
+        if min_value == max_value:
+            # if all values are the same -> return zeroed 8-bit array
+            remapped_image = np.zeros_like(array, dtype=np.uint8)
+        else:
+            # Scale float values directly to 8-bit
+            remapped_image = ((array - min_value) / (max_value - min_value) * 255).clip(0, 255).astype(np.uint8)
+    else:
+        raise ValueError("Array must be of integer or float type.")
+
+    return remapped_image
+
+
 def expand_dict_column(df, column_name):
     """
     Expand a column containing dictionaries into new columns.
