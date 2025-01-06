@@ -292,27 +292,26 @@ def invert_grayscale(image):
 def remap_to_8bit(array: np.ndarray) -> np.ndarray:
     """
     Remaps an image array to 8-bit (0-255), handling integers (signed/unsigned) and floats.
+    Uses the full theoretical range of the dtype for scaling, avoiding normalization
+    based on array values.
 
     :param array: Input image as a NumPy array.
     :return: 8-bit remapped image as a NumPy array.
     """
     if np.issubdtype(array.dtype, np.integer):
-        # integer arrays
+        # Integer arrays
         info = np.iinfo(array.dtype)
-        max_value = (1 << (info.bits - 1)) - 1 if np.issubdtype(array.dtype, np.signedinteger) else (1 << info.bits) - 1
-        scale_factor = 255 / max_value
-        remapped_image = (array * scale_factor).clip(0, 255).astype(np.uint8)
+        min_value, max_value = info.min, info.max
     elif np.issubdtype(array.dtype, np.floating):
-        # float arrays
-        min_value, max_value = array.min(), array.max()
-        if min_value == max_value:
-            # if all values are the same -> return zeroed 8-bit array
-            remapped_image = np.zeros_like(array, dtype=np.uint8)
-        else:
-            # Scale float values directly to 8-bit
-            remapped_image = ((array - min_value) / (max_value - min_value) * 255).clip(0, 255).astype(np.uint8)
+        # Float arrays
+        info = np.finfo(array.dtype)
+        min_value, max_value = info.min, info.max
     else:
         raise ValueError("Array must be of integer or float type.")
+
+    # Scale using the full dtype range
+    scale_factor = 255 / (max_value - min_value)
+    remapped_image = ((array - min_value) * scale_factor).clip(0, 255).astype(np.uint8)
 
     return remapped_image
 
